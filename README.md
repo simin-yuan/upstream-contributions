@@ -9,8 +9,9 @@ become a 404 next year. This repository holds a copy of each contribution — th
 text as it stands now, the raw API payloads, the patches, and the output that was produced while the
 work was being done — so the record survives independently of the platform that hosts it.
 
-Only contributions to established projects are kept here. One-off additions to link lists are not:
-they are cheap to repeat and say little.
+Only contributions to established projects are kept here. Link-list entries are kept only where the
+list is the main directory of an established ecosystem (Hermes Agent, JSON Schema); other list
+additions are not.
 
 Each entry points at a folder that holds the text as filed, the text as it stands now, the raw API
 payloads, the patches, the output produced while the work was done, and an Internet Archive snapshot
