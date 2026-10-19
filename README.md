@@ -17,8 +17,14 @@ additions are not.
 
 Each entry points at a folder that holds the text as filed, the text as it stands now, the raw API
 payloads, the patches, the output produced while the work was done, and an Internet Archive snapshot
-of the platform page. This repository itself is snapshotted too:
-https://web.archive.org/web/20261019092302/https://github.com/simin-yuan/upstream-contributions
+of the platform page.
+
+This repository is snapshotted too:
+
+- [The repository page, 2026-10-19 09:23 UTC](https://web.archive.org/web/20261019092302/https://github.com/simin-yuan/upstream-contributions), as it stood before the DOI was added
+- [The same page with the DOI in place](https://web.archive.org/web/20261019095049/https://github.com/simin-yuan/upstream-contributions?capture_all=on)
+- [The release `v2026.10.19`](https://web.archive.org/web/20261019095540/https://github.com/simin-yuan/upstream-contributions/releases/tag/v2026.10.19)
+- [The Zenodo record](https://web.archive.org/web/20261019095414/https://zenodo.org/records/23470461)
 
 ## Index
 
