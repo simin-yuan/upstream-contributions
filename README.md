@@ -36,6 +36,7 @@ This repository is snapshotted too:
 | 2026-10-19 | NousResearch/hermes-agent | issue | [Bedrock and Codex streams don't cut a repetition loop mid-stream (#130551 covers chat_completions and Anthropic only)](hermes-agent/2026-10-19-runaway-bedrock-codex/) — [#141477](https://github.com/NousResearch/hermes-agent/issues/141477) | open |
 | 2026-10-19 | NousResearch/hermes-agent | PR | [cut runaway repetition loops mid-stream on Bedrock and Codex](hermes-agent/2026-10-19-runaway-bedrock-codex/) — [#141479](https://github.com/NousResearch/hermes-agent/pull/141479) | open, awaiting CI approval |
 | 2026-10-19 | 0xNyk/awesome-hermes-agent | issue | [Listing request for `hermes-degeneracy-guard`](awesome-hermes-agent/2026-10-19-listing/) — [#524](https://github.com/0xNyk/awesome-hermes-agent/issues/524) | open |
+| 2026-10-19 | openai/codex | issue | [Stop a streamed reply that turns into a repetition loop (Codex CLI sends no output cap)](openai-codex/2026-10-19-issue-55279/) — [#55279](https://github.com/openai/codex/issues/55279) | open, awaiting triage |
 | 2026-10-08 | sourcemeta/awesome-jsonschema | PR | [Add greencheck to Development Tools](awesome-jsonschema/2026-10-08-pr-67/) — [#67](https://github.com/sourcemeta/awesome-jsonschema/pull/67) | merged |
 | 2026-09-28 | SchemaStore/schemastore | PR | [`package.json`: reject an empty `version` string](schemastore/2026-09-28-pr-6421/) — [#6421](https://github.com/SchemaStore/schemastore/pull/6421) | merged |
 
