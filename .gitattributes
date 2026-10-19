@@ -1,3 +1,2 @@
-# Patches are reproduced exactly as they were exported, so they must not be
-# line-ending converted on checkout. Everything else follows the usual rules.
+* text=auto eol=lf
 *.patch -text
