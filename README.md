@@ -1,5 +1,7 @@
 # Upstream contributions
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23470460.svg)](https://doi.org/10.5281/zenodo.23470460)
+
 A record of my contributions to upstream open-source projects, kept with the original texts,
 timestamps and evidence.
 
@@ -63,6 +65,23 @@ headers, and remain under the licence of the project they were submitted to:
 
 Quoted comments from maintainers are reproduced verbatim with attribution, which is what the record
 is for.
+
+## Archiving and citation
+
+Zenodo archives each tagged release of this repository and assigns a DOI. All versions share the
+concept DOI [10.5281/zenodo.23470460](https://doi.org/10.5281/zenodo.23470460); the release
+`v2026.10.19` is [10.5281/zenodo.23470461](https://doi.org/10.5281/zenodo.23470461).
+
+```bibtex
+@misc{yuan_upstream_contributions,
+  author    = {Yuan, Simin (Simon)},
+  title     = {Upstream contributions: a record of issues and pull requests to upstream open-source projects},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.23470460},
+  url       = {https://doi.org/10.5281/zenodo.23470460}
+}
+```
 
 ---
 
