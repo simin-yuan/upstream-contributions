@@ -50,8 +50,20 @@ All times UTC as returned by the API; Beijing time is +08:00.
 | 2026-10-19 09:46:52 | PR #141479 opened against `main`, one commit, five files. |
 | 2026-10-19 09:51:24 | @alt-glitch labeled the PR `comp/agent`, `provider/bedrock`, `provider/openai`, `type/bug`, `area/streaming`, `P2`. |
 | 2026-10-19 09:51:31 | @alt-glitch labeled the issue with the same six labels at `P3`. |
+| 2026-10-19 09:51:35 | @alt-glitch commented on the issue, pointing at the pull request (quoted below). |
 | 2026-10-19 09:56:49 | Internet Archive snapshot of the issue requested and verified. |
 | 2026-10-19 09:57:41 | Internet Archive snapshot of the PR requested and verified. |
+| 2026-10-19 10:27:46 | Second Internet Archive snapshot of the issue, after the comment above was added to this record. |
+
+> #141479 aims to fix this: it adds the mid-stream repetition-loop guard to the Bedrock Converse and
+> Codex Responses stream consumers, so a looping reply stops early instead of using up the whole
+> output budget.
+>
+> — `alt-glitch`, 2026-10-19 09:51:35Z
+
+The visible text is quoted exactly as served. The comment body also ends with an invisible marker,
+`<!-- argus:v1 item=141477 -->`, which is part of the body returned by the API and is kept here so a
+reader can reconcile this quote with `snapshot.json` byte for byte.
 
 CI on the head commit is gated: first-time contributors need a maintainer to approve the run before
 the workflows execute, so `gh pr checks` reports no checks. That is not a failure.
