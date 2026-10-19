@@ -1,0 +1,6 @@
+- **Name / URL:** hermes-degeneracy-guard — https://github.com/simin-yuan/hermes-degeneracy-guard
+- **Author:** Simin (Simon) Yuan (@simin-yuan)
+- **Category:** Skills & Plugins → Plugins
+- **Description:** A hook-only plugin for tool calls whose arguments look like a repetition loop rather than data. Instead of refusing, it asks the user through Hermes' own approval gate; denied or unanswered calls are refused, including in cron and other unattended runs. Payloads that parse as data (JSON, tables, matrices, CSV) are not questioned. Standard library only; no network, shell, background threads, telemetry or credentials.
+- **Why it matters to current Hermes users:** Core's `RunawayStreamWatch` cuts runaway text but deliberately lets a provider-confirmed tool call through even when its arguments repeat; this covers that case so a looping model cannot quietly write its loop into a file or a shell command.
+- **Status:** passes `hermes plugins validate` and `hermes plugins doctor --ci`; CI on Python 3.11–3.14 against a pinned Hermes commit and weekly against Hermes main; measured hold-out results, including misses, in the README. Official catalog entry proposed in NousResearch/hermes-agent#141341. Suggested label: beta.

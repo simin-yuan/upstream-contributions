@@ -1,0 +1,20 @@
+From 1f67f82ec2599f8d0b2b7b838ba999e41a87056f Mon Sep 17 00:00:00 2001
+From: Simin Yuan <yleven120@gmail.com>
+Date: Sun, 27 Sep 2026 21:22:26 +0800
+Subject: [PATCH] package.json: negative test for empty "version"
+
+---
+ src/negative_test/package/version-empty-string.json | 4 ++++
+ 1 file changed, 4 insertions(+)
+ create mode 100644 src/negative_test/package/version-empty-string.json
+
+diff --git a/src/negative_test/package/version-empty-string.json b/src/negative_test/package/version-empty-string.json
+new file mode 100644
+index 00000000000..b69cf98179e
+--- /dev/null
++++ b/src/negative_test/package/version-empty-string.json
+@@ -0,0 +1,4 @@
++{
++  "name": "version-empty-string",
++  "version": ""
++}

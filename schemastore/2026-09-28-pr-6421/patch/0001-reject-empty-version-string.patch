@@ -1,0 +1,23 @@
+From 272e9398298121fa2a87cbf611e8d28136bd5abf Mon Sep 17 00:00:00 2001
+From: Simin Yuan <yleven120@gmail.com>
+Date: Sun, 27 Sep 2026 21:20:47 +0800
+Subject: [PATCH] package.json: reject empty "version" string (minLength: 1)
+
+---
+ src/schemas/json/package.json | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/schemas/json/package.json b/src/schemas/json/package.json
+index 2c191825bdb..541ca85dce2 100644
+--- a/src/schemas/json/package.json
++++ b/src/schemas/json/package.json
+@@ -381,7 +381,8 @@
+     },
+     "version": {
+       "description": "Version must be parsable by node-semver, which is bundled with npm as a dependency.",
+-      "type": "string"
++      "type": "string",
++      "minLength": 1
+     },
+     "description": {
+       "description": "This helps people discover your package, as it's listed in 'npm search'.",

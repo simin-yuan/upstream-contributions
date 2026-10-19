@@ -1,0 +1,29 @@
+From cbe02d8f0536f59602f1341232d837699b9df638 Mon Sep 17 00:00:00 2001
+From: Simin Yuan <yleven120@gmail.com>
+Date: Thu, 8 Oct 2026 10:05:00 +0800
+Subject: [PATCH] Add greencheck to Development Tools
+
+---
+ data.yaml | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/data.yaml b/data.yaml
+index 8696099..82908b0 100644
+--- a/data.yaml
++++ b/data.yaml
+@@ -786,4 +786,12 @@
+   type: Videos
+   level: beginner
+   summary: >-
+-    This presentation discusses the very basic ideas of JSON Schema using analogies to help beginners build their concepts with greater clarity.
+\ No newline at end of file
++    This presentation discusses the very basic ideas of JSON Schema using analogies to help beginners build their concepts with greater clarity.
++- title: greencheck
++  url: https://github.com/simin-yuan/greencheck
++  type: Development Tools
++  level: intermediate
++  summary: >-
++    Mutation testing and discriminability checks for JSON Schema validators, gates, and metrics:
++    deliberately damage an artefact and re-run the validator to expose mutations that escape, and
++    flag measurements that cannot react differently to inputs they claim to distinguish
+\ No newline at end of file

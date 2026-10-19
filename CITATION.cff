@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: "Upstream contributions: a record of issues and pull requests to upstream open-source projects"
+message: "If you refer to this record, please cite it as below."
+type: dataset
+authors:
+  - family-names: "Yuan"
+    given-names: "Simin (Simon)"
+    orcid: "https://orcid.org/0009-0002-6843-3390"
+    website: "https://github.com/simin-yuan"
+abstract: >-
+  A record of contributions to upstream open-source projects (Hermes Agent, SchemaStore,
+  awesome-jsonschema, awesome-hermes-agent), kept with the original texts, timestamps, patches,
+  raw API payloads and the output produced while the work was being done, so that the record
+  does not depend on the platform that hosts it.
+keywords:
+  - open source
+  - contribution record
+  - software provenance
+  - evidence
+license: CC-BY-4.0
+version: "2026.10.19"
+date-released: "2026-10-19"
+repository-code: "https://github.com/simin-yuan/upstream-contributions"
+url: "https://github.com/simin-yuan/upstream-contributions"

@@ -1,0 +1,107 @@
+From 988913a6f284d107271a34f010f7b60196b27465 Mon Sep 17 00:00:00 2001
+From: "Simin (Simon) Yuan" <yleven120@gmail.com>
+Date: Sun, 18 Oct 2026 18:05:46 +0000
+Subject: [PATCH] fix(plugins): validate accepts the legacy hooks: manifest key
+ the loader reads
+
+The loader resolves declared hooks from provides_hooks and falls back to
+the legacy hooks: key (#108371), but `hermes plugins validate` only read
+provides_hooks. An external plugin declaring its hooks under hooks:
+loaded fine yet failed admission with "undeclared hooks registered (not
+in provides_hooks)".
+
+Move the resolution into plugins_manifest.hooks_manifest_key() and use it
+in both the loader and the validator. When only the legacy key is
+present, validate passes with a warning recommending provides_hooks.
+---
+ hermes_cli/plugin_validate.py            |  7 +++++--
+ hermes_cli/plugins_manifest.py           | 13 ++++++++++---
+ tests/hermes_cli/test_plugin_validate.py | 14 ++++++++++++++
+ 3 files changed, 29 insertions(+), 5 deletions(-)
+
+diff --git a/hermes_cli/plugin_validate.py b/hermes_cli/plugin_validate.py
+index a7c689c9..717884b5 100644
+--- a/hermes_cli/plugin_validate.py
++++ b/hermes_cli/plugin_validate.py
+@@ -27,7 +27,7 @@ from hermes_cli.plugin_validate_core_override import check_core_override
+ from hermes_cli.plugin_validate_desktop import check_desktop_surface
+ from hermes_cli.plugin_validate_private_imports import check_private_imports
+ from hermes_cli.plugin_validate_locales import check_language_packs
+-from hermes_cli.plugins_manifest import _CONFIG_SCHEMA_TYPES
++from hermes_cli.plugins_manifest import _CONFIG_SCHEMA_TYPES, hooks_manifest_key
+ 
+ _UPPER_SNAKE_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
+ # Admission accepts exactly the ``config_schema`` types the loader type-checks at load time (and the
+@@ -413,9 +413,12 @@ def _check_capabilities(
+     else:
+         report.add("capability probe", True, "register() ran in isolation")
+ 
++    hooks_key = hooks_manifest_key(manifest)
++    if hooks_key == "hooks":
++        report.warn("plugin.yaml declares hooks under the legacy `hooks:` key; rename it to provides_hooks")
+     for kind, manifest_key in (
+         ("tools", "provides_tools"),
+-        ("hooks", "provides_hooks"),
++        ("hooks", hooks_key),
+         ("middleware", "provides_middleware"),
+     ):
+         declared = set(_declared_list(manifest, manifest_key))
+diff --git a/hermes_cli/plugins_manifest.py b/hermes_cli/plugins_manifest.py
+index 576ba20e..008a788a 100644
+--- a/hermes_cli/plugins_manifest.py
++++ b/hermes_cli/plugins_manifest.py
+@@ -522,6 +522,15 @@ def _manifest_kind(data: Mapping, key: str, plugin_dir: Path) -> str:
+     return kind
+ 
+ 
++def hooks_manifest_key(data: Mapping) -> str:
++    """The manifest key declared hooks are read from: ``provides_hooks``, else the legacy ``hooks:``.
++
++    ``hooks:`` is the spelling the bundled manifests carried for months; external copies of it must
++    keep declaring the same thing (#108371). ``hermes plugins validate`` resolves it the same way.
++    """
++    return "hooks" if "hooks" in data and "provides_hooks" not in data else "provides_hooks"
++
++
+ def parse_manifest_file(
+     manifest_file: Path, plugin_dir: Path, source: str, prefix: str
+ ) -> Optional[PluginManifest]:
+@@ -546,9 +555,7 @@ def parse_manifest_file(
+             description=data.get("description", ""), author=_display_author(data.get("author", "")),
+             requires_env=data.get("requires_env", []),
+             provides_tools=data.get("provides_tools", []),
+-            # ``hooks:`` is the spelling the bundled manifests carried for months; external copies of it
+-            # must keep declaring the same thing (#108371).
+-            provides_hooks=data.get("provides_hooks", data.get("hooks", [])), source=source, path=str(plugin_dir),
++            provides_hooks=data.get(hooks_manifest_key(data), []), source=source, path=str(plugin_dir),
+             kind=kind, key=key, requires_hermes=str(data.get("requires_hermes") or "").strip(),
+             capabilities=_parse_declared_capabilities(data.get("capabilities"), name),
+             **_parse_manifest_v2_fields(data, key), emits=data.get("emits") or [],
+diff --git a/tests/hermes_cli/test_plugin_validate.py b/tests/hermes_cli/test_plugin_validate.py
+index 5ad481e4..3bad92b9 100644
+--- a/tests/hermes_cli/test_plugin_validate.py
++++ b/tests/hermes_cli/test_plugin_validate.py
+@@ -165,6 +165,20 @@ class TestCapabilityProbe:
+         assert not report.ok
+         assert any("pre_tool_call" in f for f in report.failures)
+ 
++    def test_legacy_hooks_key_declares_hooks_like_the_loader(self, tmp_path):
++        # The loader reads ``hooks:`` when ``provides_hooks`` is absent (#108371); admission must agree.
++        manifest = dict(BASE_MANIFEST, hooks=["pre_tool_call", "post_llm_call"])
++        init = (
++            "def register(ctx):\n"
++            "    ctx.register_hook('pre_tool_call', lambda **kw: None)\n"
++            "    ctx.register_hook('post_llm_call', lambda **kw: None)\n"
++        )
++        d = _make_plugin(tmp_path, manifest=manifest, init_py=init)
++        report = validate_plugin_dir(d)
++        assert ("declared hooks", True, "matches registrations") in report.checks
++        assert report.ok, report.failures
++        assert any("provides_hooks" in w for w in report.warnings)
++
+     def test_crashing_register_is_contained(self, tmp_path):
+         init = "def register(ctx):\n    raise RuntimeError('boom')\n"
+         d = _make_plugin(tmp_path, manifest=dict(BASE_MANIFEST), init_py=init)
+-- 
+2.53.0.windows.3
+

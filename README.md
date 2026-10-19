@@ -1,0 +1,63 @@
+# Upstream contributions
+
+A record of my contributions to upstream open-source projects, kept with the original texts,
+timestamps and evidence.
+
+Platform records are not permanent. An issue can be deleted, a repository can be renamed or taken
+private, a comment can be edited, and a pull request that was reviewed carefully last month can
+become a 404 next year. This repository holds a copy of each contribution — the text as filed, the
+text as it stands now, the raw API payloads, the patches, and the output that was produced while the
+work was being done — so the record survives independently of the platform that hosts it.
+
+Only contributions to established projects are kept here. One-off additions to link lists are not:
+they are cheap to repeat and say little.
+
+## Index
+
+| Date | Project | Type | Title | Status |
+|---|---|---|---|---|
+| 2026-10-19 | NousResearch/hermes-agent | issue | [`hermes plugins validate` rejects the legacy `hooks:` manifest key that the loader accepts](hermes-agent/2026-10-19-validate-legacy-hooks/) — [#141339](https://github.com/NousResearch/hermes-agent/issues/141339) | open |
+| 2026-10-19 | NousResearch/hermes-agent | PR | [Make the plugin validator accept the legacy `hooks:` key](hermes-agent/2026-10-19-validate-legacy-hooks/) — [#141340](https://github.com/NousResearch/hermes-agent/pull/141340) | open, awaiting CI approval |
+| 2026-10-19 | NousResearch/hermes-agent | PR | [Add `hermes-degeneracy-guard` to the plugin catalog](hermes-agent/2026-10-19-plugin-catalog-degeneracy-guard/) — [#141341](https://github.com/NousResearch/hermes-agent/pull/141341) | open, ready for review |
+| 2026-10-19 | 0xNyk/awesome-hermes-agent | issue | [Listing request for `hermes-degeneracy-guard`](awesome-hermes-agent/2026-10-19-listing/) — [#524](https://github.com/0xNyk/awesome-hermes-agent/issues/524) | open |
+| 2026-10-08 | sourcemeta/awesome-jsonschema | PR | [Add greencheck to Development Tools](awesome-jsonschema/2026-10-08-pr-67/) — [#67](https://github.com/sourcemeta/awesome-jsonschema/pull/67) | merged |
+| 2026-09-28 | SchemaStore/schemastore | PR | [`package.json`: reject an empty `version` string](schemastore/2026-09-28-pr-6421/) — [#6421](https://github.com/SchemaStore/schemastore/pull/6421) | merged |
+
+## What each folder contains
+
+| File | Contents |
+|---|---|
+| `record.md` | What was filed, why it matters, the timeline of who did what, and what changed in the text after submission |
+| `*-current.md` | The body as it stands on the platform, fetched through the API |
+| `*-original.md` | The body as first posted, where it was later edited and a copy of the first version was kept |
+| `snapshot.json` | Raw API payloads: the item, its comments, its timeline (labels, comments, cross-references, merges) and its changed files |
+| `patch/` | The substantive commits, exported with `git format-patch` or from the commit API. Bookkeeping commits (email mapping, formatting) are excluded |
+| `evidence.md` | Reproduction steps and the real output produced while the work was done — including the runs that failed, and a note wherever something could not be verified |
+| `archive.md` | An independent Internet Archive snapshot of the platform page |
+
+Two rules were applied to the evidence and are worth stating: nothing is written into `evidence.md`
+that was not actually produced at the time, and whenever a claim rests on the project's own CI rather
+than on a local run, it says so. A record that only collects successes is not evidence of anything.
+
+## License
+
+The prose in this repository — `README.md`, the `record.md`, `evidence.md` and `archive.md` files,
+and the archived issue and pull request texts written by their respective authors — is licensed
+under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), by Simin (Simon) Yuan.
+
+The patches in each `patch/` directory are the work of their authors as recorded in the commit
+headers, and remain under the licence of the project they were submitted to:
+
+| Project | Licence |
+|---|---|
+| NousResearch/hermes-agent | MIT |
+| SchemaStore/schemastore | Apache-2.0 |
+| sourcemeta/awesome-jsonschema | CC0-1.0 |
+| 0xNyk/awesome-hermes-agent | no licence declared upstream; the quoted listing text is reproduced for the record |
+
+Quoted comments from maintainers are reproduced verbatim with attribution, which is what the record
+is for.
+
+---
+
+Simin (Simon) Yuan · ORCID [0009-0002-6843-3390](https://orcid.org/0009-0002-6843-3390) · https://github.com/simin-yuan
