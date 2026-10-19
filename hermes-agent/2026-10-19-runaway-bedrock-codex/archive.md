@@ -15,6 +15,6 @@ deleted, or the repository goes private, the page still exists somewhere outside
 
 A note on the second issue capture: requesting the plain URL again on the same day returns a `302` to
 the morning capture rather than making a new one, so the fresh request carried `?capture_all=on`,
-which is why that link has a query string. The morning capture already contains the maintainer's
-comment (checked by fetching it and matching the text); the second one records the page as it stands
-after this folder was updated.
+which is why that link has a query string. The morning capture already contains the comment from
+`@alt-glitch` (checked by fetching it and matching the text); the second one records the page as it
+stands after this folder was updated.
