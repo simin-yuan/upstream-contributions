@@ -12,6 +12,11 @@ work was being done — so the record survives independently of the platform tha
 Only contributions to established projects are kept here. One-off additions to link lists are not:
 they are cheap to repeat and say little.
 
+Each entry points at a folder that holds the text as filed, the text as it stands now, the raw API
+payloads, the patches, the output produced while the work was done, and an Internet Archive snapshot
+of the platform page. This repository itself is snapshotted too:
+https://web.archive.org/web/20261019092302/https://github.com/simin-yuan/upstream-contributions
+
 ## Index
 
 | Date | Project | Type | Title | Status |
