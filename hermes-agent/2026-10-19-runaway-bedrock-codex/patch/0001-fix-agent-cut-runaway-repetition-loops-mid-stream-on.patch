@@ -1,0 +1,414 @@
+From 0b900ca7af08a3ad5479a929b7790e4a907be506 Mon Sep 17 00:00:00 2001
+From: "Simin (Simon) Yuan" <yleven120@gmail.com>
+Date: Mon, 19 Oct 2026 17:46:25 +0800
+Subject: [PATCH] fix(agent): cut runaway repetition loops mid-stream on
+ Bedrock and Codex
+
+Wires the existing RunawayStreamWatch into the Bedrock Converse and Codex Responses streams, so a reply that turns into a repetition loop is cut where it starts instead of streaming to the output limit. Both cuts hand off the same way the other two streams do: the response carries _runaway_repetition, and the length path ends the turn.
+---
+ agent/bedrock_adapter.py                      |  49 ++++-
+ agent/chat_completion_helpers.py              |   2 +-
+ agent/codex_runtime.py                        |  34 ++-
+ agent/turn_response_check.py                  |   2 +
+ ...stream_runaway_repetition_bedrock_codex.py | 207 ++++++++++++++++++
+ 5 files changed, 287 insertions(+), 7 deletions(-)
+ create mode 100644 tests/agent/test_stream_runaway_repetition_bedrock_codex.py
+
+diff --git a/agent/bedrock_adapter.py b/agent/bedrock_adapter.py
+index 44c11875..5970d2fe 100644
+--- a/agent/bedrock_adapter.py
++++ b/agent/bedrock_adapter.py
+@@ -1081,6 +1081,42 @@ def normalize_converse_response(response: dict) -> SimpleNamespace:
+ 
+ # --- Streaming response conversion ---
+ 
++class _ConverseRunawayWatch:
++    """Mid-stream repetition cut for the Converse stream: ``events()`` stops yielding at the delta that
++    trips a channel's ``RunawayStreamWatch``; ``cut_response()`` then returns what streamed so far with
++    ``stop_reason=max_tokens`` and ``_runaway_repetition`` set, the hand-off the length path ends the turn on.
++    A tool call cut mid-arguments is dropped, as no tool has run yet. Disabled, it passes events through."""
++
++    def __init__(self, *, enabled: bool) -> None:
++        from agent.repetition_guard import RunawayStreamWatch
++        self.enabled, self.channel = enabled, None
++        self._watches = {"content": RunawayStreamWatch(), "reasoning": RunawayStreamWatch()}
++
++    def _tripped(self, event: dict[str, Any]) -> Optional[str]:
++        delta = event.get("contentBlockDelta", {}).get("delta", {})
++        reasoning = delta.get("reasoningContent")
++        channel, text = ("reasoning", reasoning.get("text")) if isinstance(reasoning, dict) else ("content", delta.get("text"))
++        return channel if isinstance(text, str) and text and self._watches[channel].feed(text) else None
++
++    def events(self, stream):
++        for event in stream:
++            if self.enabled and isinstance(event, dict) and "contentBlockDelta" in event:
++                self.channel = self._tripped(event)
++                if self.channel:
++                    logger.warning("Stream cut: the Bedrock %s turned into a runaway repetition loop.", self.channel)
++                    return
++            yield event
++
++    def cut_response(self, parts, stream_blocks, usage_data, flush_text):
++        finished = {call.id for call in parts.tool_calls}
++        blocks = [stream_blocks[i] for i in sorted(stream_blocks)
++                  if "toolUse" not in stream_blocks[i] or stream_blocks[i]["toolUse"].get("toolUseId") in finished]
++        flush_text()
++        response = parts.build(blocks, usage_data, "max_tokens", "")
++        response._runaway_repetition = True
++        return response
++
++
+ def normalize_converse_stream_events(event_stream) -> SimpleNamespace:
+     """Consume a ConverseStream event stream (no callbacks) → same shape as ``normalize_converse_response()``."""
+     return stream_converse_with_callbacks(event_stream)
+@@ -1088,7 +1124,7 @@ def normalize_converse_stream_events(event_stream) -> SimpleNamespace:
+ 
+ def stream_converse_with_callbacks(
+     event_stream, on_text_delta=None, on_tool_start=None, on_reasoning_delta=None,
+-    on_interrupt_check=None, on_event=None,
++    on_interrupt_check=None, on_event=None, watch_runaway=False,
+ ) -> SimpleNamespace:
+     """boto3 ``converse_stream()`` response + callbacks → the ``normalize_converse_response()`` shape.
+     ``on_text_delta`` only fires while no toolUse block has been seen (as on the Anthropic/chat_completions
+@@ -1096,7 +1132,11 @@ def stream_converse_with_callbacks(
+     and its exceptions are swallowed so a watchdog hook can never abort the stream.
+ 
+     Blocks are keyed by the ``contentBlockIndex`` Bedrock stamps on every contentBlockStart/Delta/Stop:
+-    text blocks get NO contentBlockStart, so a counter keyed on starts shredded them (#108200)."""
++    text blocks get NO contentBlockStart, so a counter keyed on starts shredded them (#108200).
++
++    ``watch_runaway`` cuts a text or reasoning channel that turns into a repetition loop mid-stream, with the
++    ``RunawayStreamWatch`` the chat_completions and Anthropic streams use (#130551): Converse sends no
++    ``maxTokens`` by default, so nothing else bounds the loop. See :class:`_ConverseRunawayWatch`."""
+     parts = _ResponseParts()
+     stream_blocks: dict[int, dict[str, Any]] = {}
+     current_block_index: Optional[int] = None
+@@ -1106,6 +1146,7 @@ def stream_converse_with_callbacks(
+     stop_reason = None
+     interrupted = False
+     usage_data: dict[str, int] = {}
++    watch = _ConverseRunawayWatch(enabled=watch_runaway)
+ 
+     def block_index(payload: dict[str, Any], *, new_block: bool = False) -> int:
+         """Index of the block a contentBlock* event addresses. Without ``contentBlockIndex`` (test doubles,
+@@ -1120,7 +1161,7 @@ def stream_converse_with_callbacks(
+             parts.text_parts.append("".join(current_text_buffer))
+             current_text_buffer.clear()
+ 
+-    for event in event_stream.get("stream", []):
++    for event in watch.events(event_stream.get("stream", [])):
+         if on_event is not None:
+             with suppress(Exception):
+                 on_event()
+@@ -1172,6 +1213,8 @@ def stream_converse_with_callbacks(
+         elif "metadata" in event:
+             meta_usage = event["metadata"].get("usage", {})
+             usage_data = {key: meta_usage.get(key, 0) for key in ("inputTokens", "outputTokens", "cacheReadInputTokens", "cacheWriteInputTokens")}
++    if watch.channel:
++        return watch.cut_response(parts, stream_blocks, usage_data, flush_text)
+     if stop_reason is None and not interrupted:
+         raise EmptyStreamError("Bedrock Converse stream ended before messageStop; response is incomplete")
+     flush_text()
+diff --git a/agent/chat_completion_helpers.py b/agent/chat_completion_helpers.py
+index 2b65e16f..73cbc506 100644
+--- a/agent/chat_completion_helpers.py
++++ b/agent/chat_completion_helpers.py
+@@ -2624,7 +2624,7 @@ class _BedrockStream:
+                     on_text_delta=self._after_first(agent._fire_stream_delta) if agent._has_stream_consumers() else None,
+                     on_tool_start=self._after_first(agent._fire_tool_gen_started),
+                     on_reasoning_delta=self._after_first(agent._fire_reasoning_delta) if wants_reasoning else None,
+-                    on_interrupt_check=lambda: agent._interrupt_requested, on_event=_stamp_event)
++                    on_interrupt_check=lambda: agent._interrupt_requested, on_event=_stamp_event, watch_runaway=True)
+             except EmptyStreamError:
+                 # IAM-denied fallback: no stream events, but converse() already completed.
+                 if stream.final_response is None:
+diff --git a/agent/codex_runtime.py b/agent/codex_runtime.py
+index 11ad5243..7a3f00cc 100644
+--- a/agent/codex_runtime.py
++++ b/agent/codex_runtime.py
+@@ -1102,9 +1102,16 @@ def _consume_codex_event_stream(
+     callback); ``on_commentary_message`` once per completed ``phase=commentary`` message, before any following
+     tool item; ``on_first_delta`` one-shot; ``on_event`` every event before any processing; ``interrupt_check()``
+     True breaks the loop and may raise ``TimeoutError`` / ``InterruptedError`` for request retirement that
+-    must not become a partial final response."""
++    must not become a partial final response.
++
++    Text and reasoning deltas also feed the ``RunawayStreamWatch`` the chat_completions and Anthropic streams
++    use (#130551): a channel that turns into a repetition loop ends the stream there, and the result carries
++    ``_runaway_repetition`` so the turn ends on the length path instead of streaming to the output cap."""
++    from agent.repetition_guard import RunawayStreamWatch
+     assembler = _CodexResponseAssembler(model=model, on_text_delta=on_text_delta, on_reasoning_delta=on_reasoning_delta,
+                                         on_commentary_message=on_commentary_message, on_first_delta=on_first_delta)
++    text_watch, reasoning_watch = RunawayStreamWatch(), RunawayStreamWatch()
++    runaway = None
+     for event in event_iter:
+         if on_event is not None:
+             try:
+@@ -1115,7 +1122,27 @@ def _consume_codex_event_stream(
+                 logger.debug("Codex stream on_event hook raised", exc_info=True)
+         if (interrupt_check is not None and interrupt_check()) or assembler.feed(event):
+             break
+-    return assembler.result()
++        event_type = _event_field(event, "type", "")
++        if event_type in _CODEX_TEXT_DELTA_EVENTS or event_type in _CODEX_REASONING_DELTA_EVENTS:
++            delta = _event_field(event, "delta", "")
++            if isinstance(delta, str) and delta:
++                if event_type in _CODEX_TEXT_DELTA_EVENTS and text_watch.feed(delta):
++                    runaway = "content"
++                elif event_type in _CODEX_REASONING_DELTA_EVENTS and reasoning_watch.feed(delta):
++                    runaway = "reasoning"
++                if runaway:
++                    break
++    if runaway:
++        assembler.saw_terminal = True  # a cut ends the stream on purpose; a reasoning-only cut is not "truncated"
++    result = assembler.result()
++    if runaway:
++        logger.warning("Stream cut: the %s turned into a runaway repetition loop (model=%s, provider=codex).", runaway, model)
++        result._runaway_repetition = True
++    return result
++
++
++_CODEX_TEXT_DELTA_EVENTS = frozenset({"response.output_text.delta", "response.text.delta"})
++_CODEX_REASONING_DELTA_EVENTS = frozenset({"response.reasoning_summary_text.delta", "response.reasoning_text.delta"})
+ 
+ 
+ def _sanitize_consumer_codex_request(agent: Any, request: dict[str, Any]) -> dict[str, Any]:
+@@ -1409,7 +1436,8 @@ def run_codex_stream(agent, api_kwargs: dict, client: Any = None, on_first_delta
+                     continue
+                 _log_failure(exc)
+                 raise
+-            if not agent._interrupt_requested:
++            # A runaway cut must not drain: the rest of the stream is the loop it just stopped.
++            if not agent._interrupt_requested and not getattr(final, "_runaway_repetition", False):
+                 _drain_for_finalizer(event_stream)
+             if final.status in {"incomplete", "failed"}:
+                 logger.warning("Codex Responses stream terminal status=%s "
+diff --git a/agent/turn_response_check.py b/agent/turn_response_check.py
+index 791893ba..31e173d1 100644
+--- a/agent/turn_response_check.py
++++ b/agent/turn_response_check.py
+@@ -66,6 +66,8 @@ def _codex_finish_reason(response: Any) -> str:
+ 
+ def _derive_finish_reason(agent: Any, response: Any, messages: Any) -> str:
+     if agent.api_mode == "codex_responses":
++        if getattr(response, "_runaway_repetition", False):
++            return "length"  # the stream cut a live repetition loop; the length path ends the turn on the mark
+         finish_reason = _codex_finish_reason(response)
+         # A function_call cut off by max_output_tokens is not a text turn to continue: the
+         # Codex incomplete path would replay the partial and re-hit the same cap. Route it
+diff --git a/tests/agent/test_stream_runaway_repetition_bedrock_codex.py b/tests/agent/test_stream_runaway_repetition_bedrock_codex.py
+new file mode 100644
+index 00000000..7e9ce960
+--- /dev/null
++++ b/tests/agent/test_stream_runaway_repetition_bedrock_codex.py
+@@ -0,0 +1,207 @@
++"""The Bedrock Converse and Codex Responses streams cut a repetition loop mid-stream, like the others.
++
++#130551 wired ``RunawayStreamWatch`` into the chat_completions and Anthropic Messages streams. The
++Bedrock and Codex consumers read to the end of a looping stream, and Converse sends no ``maxTokens``
++by default, so a loop there runs to the model's output limit before the post-stream check sees it.
++"""
++
++from __future__ import annotations
++
++import hashlib
++from types import SimpleNamespace
++
++import pytest
++
++from agent.bedrock_adapter import stream_converse_with_callbacks
++from agent.codex_runtime import _consume_codex_event_stream
++from agent.repetition_guard import STOP_PATH_MIN_CHARS
++from agent.turn_truncation import _CONTINUABLE_MODES
++
++_LOOP_LINE = "I will now check the configuration file again.\n"
++_LOOP = [_LOOP_LINE * 2] * 1500  # ~141K chars of one line
++_LOOP_TOTAL = sum(map(len, _LOOP))
++# Repetition the user asked for stays below the stop path's scale floor.
++_ASKED_FOR_REPEAT = "Hello world, this is a sentence the user asked me to repeat many times.\n" * 50
++# Distinct rows sharing a long suffix: repeated windows dominate, yet every line differs.
++_DISTINCT_ROWS = "".join(
++    f"| {i:05d} | status: pending review by the on-call engineer before the next release window |\n"
++    for i in range(500)
++)
++_LONG_PREFIX = "".join(hashlib.sha256(str(i).encode()).hexdigest() + "\n" for i in range(1540))
++assert len(_ASKED_FOR_REPEAT) < STOP_PATH_MIN_CHARS <= len(_DISTINCT_ROWS)
++
++
++def _chunks(text: str, size: int = 96) -> list[str]:
++    return [text[i:i + size] for i in range(0, len(text), size)]
++
++
++# ── Bedrock Converse ─────────────────────────────────────────────────────────
++
++def _converse_events(chunks: list[str], *, reasoning: bool = False) -> list[dict]:
++    key = "reasoningContent" if reasoning else "text"
++    deltas = [{"contentBlockDelta": {"contentBlockIndex": 0,
++                                     "delta": {key: {"text": c} if reasoning else c}}} for c in chunks]
++    return deltas + [{"contentBlockStop": {"contentBlockIndex": 0}}, {"messageStop": {"stopReason": "end_turn"}}]
++
++
++def _consume_converse(chunks, *, reasoning=False, watch=True):
++    seen = [0]
++
++    def counted():
++        for event in _converse_events(chunks, reasoning=reasoning):
++            if "contentBlockDelta" in event:
++                delta = event["contentBlockDelta"]["delta"]
++                seen[0] += len(delta["reasoningContent"]["text"] if reasoning else delta["text"])
++            yield event
++
++    response = stream_converse_with_callbacks({"stream": counted()}, watch_runaway=watch)
++    return response, seen[0]
++
++
++@pytest.mark.parametrize("reasoning", [False, True], ids=["text", "reasoning"])
++def test_bedrock_looping_stream_is_cut(reasoning):
++    response, consumed = _consume_converse(_LOOP, reasoning=reasoning)
++    assert consumed < _LOOP_TOTAL // 4, "the loop was read far past the point it could be judged"
++    assert response._runaway_repetition is True
++    assert response.choices[0].finish_reason == "length"
++
++
++def test_bedrock_loop_after_long_legitimate_prefix_is_cut_before_the_reply_doubles():
++    chunks = _chunks(_LONG_PREFIX) + _LOOP
++    response, consumed = _consume_converse(chunks)
++    assert getattr(response, "_runaway_repetition", False)
++    assert consumed < 2 * len(_LONG_PREFIX) + 100_000
++
++
++@pytest.mark.parametrize("text", [_ASKED_FOR_REPEAT, _DISTINCT_ROWS], ids=["asked-for-repeat", "distinct-rows"])
++def test_bedrock_repetitive_but_legitimate_stream_is_delivered(text):
++    response, consumed = _consume_converse(_chunks(text))
++    assert consumed == len(text)
++    assert not getattr(response, "_runaway_repetition", False)
++    assert response.choices[0].message.content == text
++    assert response.choices[0].finish_reason == "stop"
++
++
++def test_bedrock_without_watch_keeps_reading_to_the_end():
++    """The adapter's default is unchanged; only the live stream path opts in."""
++    response, consumed = _consume_converse(_LOOP, watch=False)
++    assert consumed == _LOOP_TOTAL
++    assert not getattr(response, "_runaway_repetition", False)
++
++
++def test_bedrock_tool_call_cut_mid_arguments_is_dropped():
++    events = [{"contentBlockStart": {"contentBlockIndex": 0, "start": {"toolUse": {"toolUseId": "t1", "name": "write_file"}}}}]
++    events += [{"contentBlockDelta": {"contentBlockIndex": 0, "delta": {"toolUse": {"input": '{"content": "'}}}}]
++    events += [{"contentBlockDelta": {"contentBlockIndex": 1, "delta": {"text": c}}} for c in _LOOP]
++    response = stream_converse_with_callbacks({"stream": iter(events)}, watch_runaway=True)
++    assert response._runaway_repetition is True
++    message = response.choices[0].message
++    assert not message.tool_calls
++    # No dangling toolUse block is left for replay: Converse rejects a toolUse without its toolResult.
++    assert not any("toolUse" in block for block in (message.bedrock_content_blocks or []))
++
++
++# ── Codex Responses ──────────────────────────────────────────────────────────
++
++def _codex_events(chunks: list[str], kind: str = "response.output_text.delta"):
++    for c in chunks:
++        yield SimpleNamespace(type=kind, delta=c, output_index=0, item_id="msg_1", content_index=0)
++
++
++def _consume_codex(chunks, kind="response.output_text.delta"):
++    seen = [0]
++
++    def counted():
++        for event in _codex_events(chunks, kind):
++            seen[0] += len(event.delta)
++            yield event
++
++    return _consume_codex_event_stream(counted(), model="fixture"), seen[0]
++
++
++@pytest.mark.parametrize("kind", ["response.output_text.delta", "response.reasoning_text.delta",
++                                  "response.reasoning_summary_text.delta"])
++def test_codex_looping_stream_is_cut(kind):
++    response, consumed = _consume_codex(_LOOP, kind)
++    assert consumed < _LOOP_TOTAL // 4
++    assert response._runaway_repetition is True
++
++
++@pytest.mark.parametrize("text", [_ASKED_FOR_REPEAT, _DISTINCT_ROWS], ids=["asked-for-repeat", "distinct-rows"])
++def test_codex_repetitive_but_legitimate_stream_is_delivered(text):
++    response, consumed = _consume_codex(_chunks(text))
++    assert consumed == len(text)
++    assert not getattr(response, "_runaway_repetition", False)
++    assert response.output_text == text
++
++
++def test_codex_cut_routes_the_turn_to_the_length_path():
++    from agent.turn_response_check import _derive_finish_reason
++    response, _ = _consume_codex(_LOOP)
++    agent = SimpleNamespace(api_mode="codex_responses")
++    assert _derive_finish_reason(agent, response, []) == "length"
++
++
++# ── Coverage: every continuable stream mode has a mid-stream cut ─────────────
++
++# chat_completions and anthropic_messages are covered end to end in test_stream_runaway_repetition.py.
++_RUNAWAY_CUT_COVERED = {
++    "chat_completions": "test_stream_runaway_repetition.py",
++    "anthropic_messages": "test_stream_runaway_repetition.py",
++    "bedrock_converse": "test_bedrock_looping_stream_is_cut",
++    "codex_responses": "test_codex_looping_stream_is_cut",
++}
++
++
++def test_every_continuable_stream_mode_has_a_runaway_cut():
++    """A new streaming mode must wire RunawayStreamWatch and add its test here (two modes were missed once)."""
++    assert set(_CONTINUABLE_MODES) <= set(_RUNAWAY_CUT_COVERED), (
++        f"no mid-stream runaway cut covered for: {sorted(set(_CONTINUABLE_MODES) - set(_RUNAWAY_CUT_COVERED))}")
++
++
++def test_bedrock_live_stream_path_hands_the_cut_to_the_turn():
++    """Through the live Bedrock dispatch: the cut response comes back marked, and the provider stream closes."""
++    from unittest.mock import patch
++
++    from agent import chat_completion_helpers as cch
++
++    class _Agent:
++        api_mode, provider = "bedrock_converse", "bedrock"
++        model = "anthropic.claude-sonnet-4-5-20250929-v1:0"
++        _interrupt_requested = _disable_streaming = False
++        reasoning_callback = stream_delta_callback = None
++        _consecutive_stale_streams = 0
++
++        def _has_stream_consumers(self): return False
++        def _buffer_status(self, *a, **k): pass
++        def _claim_stream_writer(self): return 1
++        def _fire_stream_delta(self, text): pass
++        def _fire_tool_gen_started(self, name): pass
++        def _fire_reasoning_delta(self, text): pass
++        def _safe_print(self, *a, **k): pass
++
++    class _LoopingProviderStream:
++        def __init__(self):
++            self.consumed, self.closed = 0, False
++
++        def __iter__(self):
++            for event in _converse_events(_LOOP):
++                if "contentBlockDelta" in event:
++                    self.consumed += len(event["contentBlockDelta"]["delta"]["text"])
++                yield event
++
++        def close(self):
++            self.closed = True
++
++    provider_stream = _LoopingProviderStream()
++    fake_client = SimpleNamespace(converse_stream=lambda **kw: {"stream": provider_stream})
++    with patch("agent.bedrock_adapter._get_bedrock_runtime_client", return_value=fake_client), \
++         patch("agent.bedrock_adapter.normalize_converse_response", side_effect=lambda r: r), \
++         patch("agent.bedrock_adapter.is_stale_connection_error", return_value=False), \
++         patch("agent.bedrock_adapter.is_streaming_access_denied_error", return_value=False), \
++         patch("agent.bedrock_adapter.invalidate_runtime_client", lambda *a, **k: None):
++        out = cch.interruptible_streaming_api_call(_Agent(), {"__bedrock_region__": "us-east-1", "__bedrock_converse__": True})
++    assert out._runaway_repetition is True
++    assert out.choices[0].finish_reason == "length"
++    assert provider_stream.consumed < _LOOP_TOTAL // 4
++    assert provider_stream.closed is True
+-- 
+2.53.0.windows.3
+
