@@ -4,9 +4,11 @@
 |---|---|
 | Pull request | [#67](https://github.com/sourcemeta/awesome-jsonschema/pull/67) |
 | Submitted | 2026-10-08 10:05 (UTC+08:00) — `02:05:11Z` |
-| Merged | 2026-10-08 22:03 (UTC+08:00) — `14:03:42Z` by @jviotti |
-| Merge commit | `8e48bae54ab0b34bc68e0a241535afcd757f35bf` |
+| Merged | 2026-10-08 22:03 (UTC+08:00) — `14:03:42Z` |
+| Merged by | [@jviotti](https://github.com/jviotti) |
+| Merge commit | [`8e48bae`](https://github.com/sourcemeta/awesome-jsonschema/commit/8e48bae54ab0b34bc68e0a241535afcd757f35bf) |
 | Branch | `add-greencheck` → `master` |
+| Files changed | `data.yaml` (+9 / −1), `README.md` (+1 / −0) |
 
 ## What it is, and why it mattered
 
@@ -39,5 +41,5 @@ maintainers' own projects is worth less than one that does not; @jviotti merged 
 - `snapshot.json` — raw API payloads as returned on 2026-10-19 16:58 +08:00
 - `patch/0001-add-greencheck.patch`, `patch/0002-add-greencheck.patch` — both commits, exported
   from GitHub's commit API
-- `evidence.md` — what the change does and what the project's own checks proved
+- `evidence.md` — the diff and the facts of the merge
 - `archive.md` — Internet Archive snapshot

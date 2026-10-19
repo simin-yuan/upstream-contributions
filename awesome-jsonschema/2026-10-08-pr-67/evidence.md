@@ -1,24 +1,33 @@
-# Evidence — sourcemeta/awesome-jsonschema #67
+# sourcemeta/awesome-jsonschema #67 — the change and the merge
 
-## What the change is
+## The change
 
-`data.yaml` gains one entry for **greencheck** in the Development Tools section; the rendered
-README bullet is inserted in its sorted position by the project's own generator.
-Two commits, both titled "Add greencheck to Development Tools" (the second is the rebase/squash
-pair the branch carried).
+`data.yaml` gains one entry for **greencheck** in the Development Tools section, and `README.md`
+gains the generated bullet for it:
 
-## What the project's checks proved
+```
+- [greencheck](https://github.com/simin-yuan/greencheck) - Mutation testing and discriminability
+  checks for JSON Schema validators, gates, and metrics: deliberately damage an artefact and
+  re-run the validator to expose mutations that escape, and flag measurements that cannot react
+  differently to inputs they claim to distinguish
+```
 
-There are none to report. The repository runs no checks on this path: the merge commit
-`8e48bae54ab0b34bc68e0a241535afcd757f35bf` has zero check-runs, zero commit statuses, and no
-workflow runs. The only automated gate was the repository's contributor-licence bot, which reported "All committers have
-signed the CLA." The maintainer read the change and merged it.
+`data.yaml` +9 / −1, `README.md` +1 / −0. Both commits are exported in `patch/`.
 
-Stating this plainly is the point: a merged pull request is not the same thing as a tested one, and
-a record that only lists merges as wins would hide that difference.
+## The merge
+
+| | |
+|---|---|
+| Merged | 2026-10-08 22:03 (UTC+08:00) — `14:03:42Z` |
+| Merged by | [@jviotti](https://github.com/jviotti) |
+| Merge commit | [`8e48bae54ab0b34bc68e0a241535afcd757f35bf`](https://github.com/sourcemeta/awesome-jsonschema/commit/8e48bae54ab0b34bc68e0a241535afcd757f35bf) |
+| Branch | `add-greencheck` → `master` |
+
+Before the merge, the contributor-licence bot reported that all committers had signed the CLA, and
+@jviotti left one comment: "Hi @simin-yuan ! Interesting. Thanks!" (2026-10-08 14:03:35Z).
 
 ## What is archived
 
-- The two commits as exported from GitHub's commit API (`patch/`)
-- The full comment history and timeline (`snapshot.json`), including the CLA messages, the
-  maintainer's two-line approval, and the author's reply
+- The two commits as returned by GitHub's commit API (`patch/`)
+- The item, its comments and its timeline, including the CLA messages, that comment, and the
+  author's reply (`snapshot.json`)

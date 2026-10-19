@@ -1296,5 +1296,30 @@
       "performed_via_github_app": null
     }
   ],
-  "files": []
+  "files": [
+    {
+      "sha": "d180565228c64c01082a55340b4f3581e2ce44e7",
+      "filename": "README.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "changes": 1,
+      "blob_url": "https://github.com/sourcemeta/awesome-jsonschema/blob/46dbf9a4e571c5a22f10b83436fc5243c7afdc90/README.md",
+      "raw_url": "https://github.com/sourcemeta/awesome-jsonschema/raw/46dbf9a4e571c5a22f10b83436fc5243c7afdc90/README.md",
+      "contents_url": "https://api.github.com/repos/sourcemeta/awesome-jsonschema/contents/README.md?ref=46dbf9a4e571c5a22f10b83436fc5243c7afdc90",
+      "patch": "@@ -55,6 +55,7 @@ GitHub](https://github.com/sponsors/sourcemeta)**\n - [JSONBuddy](https://www.json-buddy.com?utm_source=awesome-jsonschema) - A JSON editor and validator desktop application for Windows.\n - [Schema Gateway](https://github.com/sravan27/schema-gateway?utm_source=awesome-jsonschema) - Compile one JSON Schema into provider-ready request payloads for OpenAI, Gemini, Anthropic, and Ollama, then lint portability issues locally, in CI, or through a hosted API.\n - [Sourcemeta Studio](https://github.com/sourcemeta/studio?utm_source=awesome-jsonschema) - A Visual Studio Code extension providing professional JSON Schema tooling with real-time linting, automatic formatting, and metaschema validation.\n+- [greencheck](https://github.com/simin-yuan/greencheck?utm_source=awesome-jsonschema) - Mutation testing and discriminability checks for JSON Schema validators, gates, and metrics: deliberately damage an artefact and re-run the validator to expose mutations that escape, and flag measurements that cannot react differently to inputs they claim to distinguish.\n - [schema-envoy](https://github.com/tamerkalla/schema-envoy?utm_source=awesome-jsonschema) - Convert a JSON Schema to an LLM provider&#x27;s accepted keyword subset and get a machine-checked report of every constraint the conversion dropped, plus a residual validator over those dropped constraints so widened values can be rejected rather than only logged.\n \n ## Books"
+    },
+    {
+      "sha": "82908b0adb6a00ca483acec33d717c317468ac22",
+      "filename": "data.yaml",
+      "status": "modified",
+      "additions": 9,
+      "deletions": 1,
+      "changes": 10,
+      "blob_url": "https://github.com/sourcemeta/awesome-jsonschema/blob/46dbf9a4e571c5a22f10b83436fc5243c7afdc90/data.yaml",
+      "raw_url": "https://github.com/sourcemeta/awesome-jsonschema/raw/46dbf9a4e571c5a22f10b83436fc5243c7afdc90/data.yaml",
+      "contents_url": "https://api.github.com/repos/sourcemeta/awesome-jsonschema/contents/data.yaml?ref=46dbf9a4e571c5a22f10b83436fc5243c7afdc90",
+      "patch": "@@ -786,4 +786,12 @@\n   type: Videos\n   level: beginner\n   summary: >-\n-    This presentation discusses the very basic ideas of JSON Schema using analogies to help beginners build their concepts with greater clarity.\n\\ No newline at end of file\n+    This presentation discusses the very basic ideas of JSON Schema using analogies to help beginners build their concepts with greater clarity.\n+- title: greencheck\n+  url: https://github.com/simin-yuan/greencheck\n+  type: Development Tools\n+  level: intermediate\n+  summary: >-\n+    Mutation testing and discriminability checks for JSON Schema validators, gates, and metrics:\n+    deliberately damage an artefact and re-run the validator to expose mutations that escape, and\n+    flag measurements that cannot react differently to inputs they claim to distinguish\n\\ No newline at end of file"
+    }
+  ]
 }
