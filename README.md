@@ -37,6 +37,8 @@ This repository is snapshotted too:
 | 2026-10-19 | NousResearch/hermes-agent | PR | [cut runaway repetition loops mid-stream on Bedrock and Codex](hermes-agent/2026-10-19-runaway-bedrock-codex/) — [#141479](https://github.com/NousResearch/hermes-agent/pull/141479) | open, awaiting CI approval |
 | 2026-10-19 | 0xNyk/awesome-hermes-agent | issue | [Listing request for `hermes-degeneracy-guard`](awesome-hermes-agent/2026-10-19-listing/) — [#524](https://github.com/0xNyk/awesome-hermes-agent/issues/524) | open |
 | 2026-10-19 | openai/codex | issue | [Stop a streamed reply that turns into a repetition loop (Codex CLI sends no output cap)](openai-codex/2026-10-19-issue-55279/) — [#55279](https://github.com/openai/codex/issues/55279) | open, awaiting triage |
+| 2026-10-19 | langchain-ai/langchain | comment | [Independent measurement across six agent frameworks, and two notes on the #41286 patch](langchain/2026-10-19-issue-41285-comment/) — [#41285](https://github.com/langchain-ai/langchain/issues/41285) | open, no assignee |
+| 2026-10-19 | langchain-ai/langchainjs | comment | [Same behaviour on the JavaScript side; #11494 only covers the output-limit case](langchainjs/2026-10-19-issue-11469-comment/) — [#11469](https://github.com/langchain-ai/langchainjs/issues/11469) | open |
 | 2026-10-08 | sourcemeta/awesome-jsonschema | PR | [Add greencheck to Development Tools](awesome-jsonschema/2026-10-08-pr-67/) — [#67](https://github.com/sourcemeta/awesome-jsonschema/pull/67) | merged |
 | 2026-09-28 | SchemaStore/schemastore | PR | [`package.json`: reject an empty `version` string](schemastore/2026-09-28-pr-6421/) — [#6421](https://github.com/SchemaStore/schemastore/pull/6421) | merged |
 
@@ -71,6 +73,8 @@ headers, and remain under the licence of the project they were submitted to:
 | SchemaStore/schemastore | Apache-2.0 |
 | sourcemeta/awesome-jsonschema | CC0-1.0 |
 | 0xNyk/awesome-hermes-agent | no licence declared upstream; the quoted listing text is reproduced for the record |
+| langchain-ai/langchain | MIT — no patch is reproduced here, only quoted file paths and line numbers |
+| langchain-ai/langchainjs | MIT — same |
 
 Quoted comments from maintainers are reproduced verbatim with attribution, which is what the record
 is for.
