@@ -16,17 +16,21 @@ $ http://web.archive.org/cdx/search/cdx?url=github.com/NousResearch/hermes-agent
 |---|---|
 | https://github.com/NousResearch/hermes-agent/pull/141935 | https://web.archive.org/web/20261020080057/https://github.com/NousResearch/hermes-agent/pull/141935 |
 
-## Verification status: not confirmed from this host
+## Verified by reading it back
 
-CDX records `statuscode 200` and `length 61532` — a capture of the live page, not an error page.
+The first three read-back attempts (16:05, 16:09 and 16:12 UTC+08) returned HTTP 429 — the same
+bot-traffic block, applied to the snapshot URL and to the availability API alike, not to the page
+itself. The fourth attempt, at 16:22, returned the captured page:
 
-What could not be done: fetching the snapshot back. Three attempts from the machine that made the
-request (16:05 and 16:09 UTC+08, spaced to respect the rate limit) each returned HTTP 429, the
-Wayback Machine's "suspected abusive bot traffic" block, for the snapshot URL as well as for the
-availability API. The digest and length above are the archive's own record, not a local check of the
-rendered page.
+```
+$ curl -s https://web.archive.org/web/20261020080057/https://github.com/NousResearch/hermes-agent/pull/141935
+http=200 size=342150
+<title>feat(plugin-catalog): add provenance-gate by simin-yuan · Pull Request #141935 · NousResearch/hermes-agent · GitHub</title>
+```
 
-Anyone reading this later can close the gap in one request — open the snapshot URL and look for
-`feat(plugin-catalog): add provenance-gate` in the title. If that string is missing, treat the
-snapshot as unusable and rely on `snapshot.json` and `pr-141935-current.md` in this directory, which
-were fetched directly from the GitHub API at 15:47 and 16:05 (UTC+08).
+The PR title appears six times in the captured HTML. The snapshot is the reviewable state at filing:
+open, two files, one commit, checks held at the first-time-contributor approval gate.
+
+`snapshot.json`, `pr-files-141935.json` and `entry-contents-api.json` in this directory were fetched
+directly from the GitHub API rather than from the archive, so they do not depend on this snapshot
+surviving.
