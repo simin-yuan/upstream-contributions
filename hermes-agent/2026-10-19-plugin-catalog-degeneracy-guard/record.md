@@ -4,8 +4,10 @@
 |---|---|
 | Pull request | [#141341](https://github.com/NousResearch/hermes-agent/pull/141341) |
 | Submitted | 2026-10-19 10:20 (UTC+08:00) — `02:20:48Z` |
-| State | open, ready for review, mergeable |
-| Labels | `P3`, `type/feature`, `comp/plugins`, `area/streaming` |
+| State | merged 2026-10-21 03:46 (UTC+08:00) — `2026-10-20T19:46:52Z` |
+| Merged by | @teknium1 |
+| Commit on `main` | [`96eb7fe`](https://github.com/NousResearch/hermes-agent/commit/96eb7fe427dc610a95297302a053b84d6443e400) — author `Simin (Simon) Yuan <yleven120@gmail.com>`, committer `Teknium <127238744+teknium1@users.noreply.github.com>` |
+| Labels | `P3`, `type/feature`, `comp/plugins`, `area/streaming`, `ci-reviewed` |
 | Pinned commit | `ffc28d0ab9ac6b6c0cbb118ed5fb0c06909a3dc1` (plugin version 1.3.0) |
 
 ## What it is, and why it mattered
@@ -32,12 +34,22 @@ core decision, it borrows the mechanism the core already has for "a human should
 | 2026-10-19 08:18:17 | Branch rebased onto current `main` and force-pushed; the pin moved 1.1.0 → 1.3.0. |
 | 2026-10-19 08:47:19 | Marked ready for review again. |
 | 2026-10-19 08:47:39 | Cross-referenced by the listing request in `0xNyk/awesome-hermes-agent` (#524). |
+| 2026-10-20 18:45:41 | @teknium1 labeled it `ci-reviewed`. |
+| 2026-10-20 18:45:43 | The `Label rerun` workflow run finished `failure`. |
+| 2026-10-20 19:28:40 | Closed, then reopened at 19:28:45 — five seconds apart, with no comment, label change or push between. |
+| 2026-10-20 19:28:48 | Four new `pull_request` workflow runs were created: `CI`, `Plugin Catalog CI`, `Nix flake check`, `Docker Build, Test, and Publish`. All four carry `run_attempt` 2 and finished `success`. |
+| 2026-10-20 19:46:52 | Merged by @teknium1; `main` received one commit, `96eb7fe`. |
 
 The PR body carries a "Changes since this PR was opened" section, because the substance changed
 while it was open: version 1.1.0 refused legitimate repetitive writes, and 1.3.0 asks instead of
 refusing. A reviewer who only looks at the diff would see a version bump; the body says why.
 
-CI sits at `completed / action_required` — the first-time-contributor approval gate, not a failure.
+The entry landed on `main` as one commit. The branch's second commit (`6071c239`, the
+contributor-email mapping) did not land separately: the same file,
+`contributors/emails/yleven120@gmail.com` with the same content, had already reached `main` through
+the other catalog PR (`d21713a1`, 2026-10-20 19:20:44Z), so by the time this PR merged that commit
+carried no change. `main`'s `plugin-catalog/degeneracy-guard.yaml` is byte-identical to the branch
+head `6071c239`.
 
 ## What changed in the text after submission
 
@@ -51,6 +63,8 @@ it was posted.
 ## Contents
 
 - `pr-body-original.md`, `pr-141341-current.md`
+- `degeneracy-guard.yaml` — the entry as it stands on `main` after the merge, byte copy of
+  `plugin-catalog/degeneracy-guard.yaml` at `96eb7fe`
 - `snapshot.json` — raw API payloads as returned on 2026-10-19 16:58 +08:00
 - `patch/0001-add-degeneracy-guard-catalog-entry.patch` — the entry commit only
 - `evidence.md` — validation, doctor, catalog validation, tests, the hold-out numbers, the CI run

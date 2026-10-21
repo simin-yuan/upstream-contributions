@@ -30,9 +30,10 @@ This repository is snapshotted too:
 
 | Date | Project | Type | Title | Status |
 |---|---|---|---|---|
+| 2026-10-20 | NousResearch/hermes-agent | PR | [Add `provenance-gate` to the plugin catalog](hermes-agent/2026-10-20-plugin-catalog-provenance-gate/) — [#141935](https://github.com/NousResearch/hermes-agent/pull/141935) | merged |
 | 2026-10-19 | NousResearch/hermes-agent | issue | [`hermes plugins validate` rejects the legacy `hooks:` manifest key that the loader accepts](hermes-agent/2026-10-19-validate-legacy-hooks/) — [#141339](https://github.com/NousResearch/hermes-agent/issues/141339) | open |
 | 2026-10-19 | NousResearch/hermes-agent | PR | [Make the plugin validator accept the legacy `hooks:` key](hermes-agent/2026-10-19-validate-legacy-hooks/) — [#141340](https://github.com/NousResearch/hermes-agent/pull/141340) | open, awaiting CI approval |
-| 2026-10-19 | NousResearch/hermes-agent | PR | [Add `hermes-degeneracy-guard` to the plugin catalog](hermes-agent/2026-10-19-plugin-catalog-degeneracy-guard/) — [#141341](https://github.com/NousResearch/hermes-agent/pull/141341) | open, ready for review |
+| 2026-10-19 | NousResearch/hermes-agent | PR | [Add `hermes-degeneracy-guard` to the plugin catalog](hermes-agent/2026-10-19-plugin-catalog-degeneracy-guard/) — [#141341](https://github.com/NousResearch/hermes-agent/pull/141341) | merged |
 | 2026-10-19 | NousResearch/hermes-agent | issue | [Bedrock and Codex streams don't cut a repetition loop mid-stream (#130551 covers chat_completions and Anthropic only)](hermes-agent/2026-10-19-runaway-bedrock-codex/) — [#141477](https://github.com/NousResearch/hermes-agent/issues/141477) | open |
 | 2026-10-19 | NousResearch/hermes-agent | PR | [cut runaway repetition loops mid-stream on Bedrock and Codex](hermes-agent/2026-10-19-runaway-bedrock-codex/) — [#141479](https://github.com/NousResearch/hermes-agent/pull/141479) | open, awaiting CI approval |
 | 2026-10-19 | 0xNyk/awesome-hermes-agent | issue | [Listing request for `hermes-degeneracy-guard`](awesome-hermes-agent/2026-10-19-listing/) — [#524](https://github.com/0xNyk/awesome-hermes-agent/issues/524) | open |
