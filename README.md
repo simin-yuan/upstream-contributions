@@ -30,6 +30,7 @@ This repository is snapshotted too:
 
 | Date | Project | Type | Title | Status |
 |---|---|---|---|---|
+| 2026-10-21 | NousResearch/hermes-agent | PR | [Add `skill-lineage` to the plugin catalog](hermes-agent/2026-10-21-catalog-skill-lineage/) — [#142381](https://github.com/NousResearch/hermes-agent/pull/142381) | open, `P3` `comp/plugins` `type/feature`; a review is required |
 | 2026-10-21 | NousResearch/hermes-agent | PR | [`api_max_retries` counts attempts, not retries](hermes-agent/2026-10-21-api-max-retries-attempts/) — [#142179](https://github.com/NousResearch/hermes-agent/pull/142179) | open, no review |
 | 2026-10-20 | NousResearch/hermes-agent | PR | [Add `provenance-gate` to the plugin catalog](hermes-agent/2026-10-20-plugin-catalog-provenance-gate/) — [#141935](https://github.com/NousResearch/hermes-agent/pull/141935) | merged |
 | 2026-10-19 | NousResearch/hermes-agent | issue | [`hermes plugins validate` rejects the legacy `hooks:` manifest key that the loader accepts](hermes-agent/2026-10-19-validate-legacy-hooks/) — [#141339](https://github.com/NousResearch/hermes-agent/issues/141339) | open |
