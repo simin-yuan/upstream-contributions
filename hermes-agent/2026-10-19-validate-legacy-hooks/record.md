@@ -5,7 +5,7 @@
 | Issue | [#141339](https://github.com/NousResearch/hermes-agent/issues/141339) |
 | Pull request | [#141340](https://github.com/NousResearch/hermes-agent/pull/141340) |
 | Submitted | 2026-10-19 10:20 (UTC+08:00) — issue `02:20:22Z`, PR `02:20:33Z` |
-| State | issue open; PR open, mergeable, awaiting maintainer approval of CI |
+| State | issue open; PR open, mergeable, one commit on current `main`; workflows awaiting maintainer approval |
 | Labels | `P2`, `type/bug`, `comp/cli`, `comp/plugins` (both items) |
 | Files in this folder | the issue and the pull request, side by side, because the PR exists only to close the issue |
 
@@ -44,9 +44,30 @@ All times UTC as returned by the API; Beijing time is +08:00.
 |---|---|
 | 2026-10-19 08:43:50 | Branch rebased onto the current `main` and force-pushed (`head_ref_force_pushed`); the two commits and their authorship are unchanged. |
 | 2026-10-19 08:47 | PR body rewritten in the repository's pull request template; issue body extended with an Environment section. |
+| 2026-10-21 05:06:29 | Rebased onto `main` at `cf4f3a7` ("feat(ci): pin docker buildx version to v0.31.8") and force-pushed with `--force-with-lease`, head `c5e60648` → `341b152d`. The contributor-email commit was dropped automatically ("patch contents already upstream"): that file had already reached `main` through the catalog PR. Author `Simin (Simon) Yuan <yleven120@gmail.com>` and author date unchanged; committer the same identity; no trailers. The PR now shows one commit. |
+| 2026-10-21 05:11:28 | Three workflow runs created on the new head — `CI`, `Nix flake check`, `Docker Build, Test, and Publish`. All three conclude `action_required`; the head still has zero check runs. |
 
-CI on the head commit sits at `completed / action_required`: first-time contributors need a
-maintainer to approve the run before the workflows execute. `action_required` is not a failure.
+CI on the head commit sits at `completed / action_required`, as it did before the rebase: approval is
+recorded per pull request, so a new push does not inherit one. Evidence from the two catalog PRs —
+#141341 ran its workflows once a maintainer had approved that PR, and later pushes executed without
+a fresh approval; #141340 has never been approved, and its three runs on the 2026-10-21 head are
+`action_required` again. `action_required` is not a failure: nothing executed, and no step log exists.
+
+## Local verification before the 2026-10-21 push
+
+The rebased branch was tested on this machine before it was pushed, with the repository's own runner
+(`scripts/run_tests.sh`) and the local Python 3.11 environment:
+
+| Test file | Result |
+|---|---|
+| `tests/hermes_cli/test_plugin_validate.py` | 49 passed, 1 failed |
+| `tests/hermes_cli/test_plugin_capabilities.py`, `test_plugin_catalog.py` | 49 passed, 0 failed |
+| `tests/hermes_cli/test_plugins_loader.py`, `test_plugin_manifest_v2.py`, `test_plugin_install_manifest_version.py` | 30 passed, 2 failed, 1 file did not collect |
+
+The same failures, and the same file that does not collect, reproduce on an untouched checkout of
+`main` at `cf4f3a7` in a separate worktree. They are properties of this Windows environment, not of
+the change, and the change adds no failing test. Whether they pass on the CI platforms is not
+established here.
 
 ## What changed in the text after submission
 
