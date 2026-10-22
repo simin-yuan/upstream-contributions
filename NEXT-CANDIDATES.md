@@ -24,6 +24,13 @@ revision at write time (which is a hard fact the gate can capture itself) and le
 until someone names the check (which it cannot: agents write "only if the benchmark passes", not
 which benchmark).
 
+**Pinning the revision: empty beats wrong.** A revision is only capturable when the session actually
+operated on that repository. Most claims have no repository at all ("the user decided on Postgres",
+"Alice answers next week"), and an agent's working directory is frequently some other repository.
+A commit captured from an unrelated cwd is worse than an empty field, because it will be read as a
+hard fact. So the field is optional: fill it only when the repository was touched in this session,
+otherwise leave it empty.
+
 **Constraint that decides the design.** Whatever appends a resolution must not be the agent that
 wrote the claim, or the condition is graded by its author. In practice that means the user or CI.
 
