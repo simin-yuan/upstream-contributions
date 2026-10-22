@@ -35,6 +35,12 @@ This repository is snapshotted too:
 | 2026-10-21 | NousResearch/hermes-agent | PR | [Add `skill-lineage` to the plugin catalog](hermes-agent/2026-10-21-catalog-skill-lineage/) — [#142381](https://github.com/NousResearch/hermes-agent/pull/142381) | open, `P3` `comp/plugins` `type/feature`; a review is required |
 | 2026-10-21 | NousResearch/hermes-agent | PR | [`api_max_retries` counts attempts, not retries](hermes-agent/2026-10-21-api-max-retries-attempts/) — [#142179](https://github.com/NousResearch/hermes-agent/pull/142179) | open, no review |
 | 2026-10-20 | NousResearch/hermes-agent | PR | [Add `provenance-gate` to the plugin catalog](hermes-agent/2026-10-20-plugin-catalog-provenance-gate/) — [#141935](https://github.com/NousResearch/hermes-agent/pull/141935) | merged |
+| 2026-10-20 | huggingface/smolagents | issue | [Client retries and `ApiModel` retries multiply: nine requests per rate limit](smolagents/2026-10-20-issue-3034/) — [#3034](https://github.com/huggingface/smolagents/issues/3034) | open, no maintainer response |
+| 2026-10-20 | huggingface/smolagents | PR | [Disable client retries on `ApiModel.retryer` replays](smolagents/2026-10-20-pr-3036/) — [#3036](https://github.com/huggingface/smolagents/pull/3036) | open, no review |
+| 2026-10-20 | huggingface/smolagents | issue | [`Retrying` ignores `Retry-After`; the first retry already waits 2–3× `wait_seconds`](smolagents/2026-10-20-issue-3037/) — [#3037](https://github.com/huggingface/smolagents/issues/3037) | open, no maintainer response |
+| 2026-10-20 | crewAIInc/crewAI | comment | [Nine requests in ten seconds under someone else's `Retry-After` patch](crewAI/2026-10-20-pr-7771-comment/) — [#7771](https://github.com/crewAIInc/crewAI/pull/7771) | open, no maintainer response |
+| 2026-10-20 | crewAIInc/crewAI | PR | [Don't stack the SDK's retries on rate-limit replays](crewAI/2026-10-20-pr-8333/) — [#8333](https://github.com/crewAIInc/crewAI/pull/8333) | open, no review; `llm-generated` label requested, not yet applied |
+| 2026-10-20 | langchain-ai/langchainjs | PR | [Don't turn truncated streamed tool-call arguments into a tool call](langchainjs/2026-10-20-pr-11994/) — [#11994](https://github.com/langchain-ai/langchainjs/pull/11994) | open, four checks green, no review |
 | 2026-10-19 | NousResearch/hermes-agent | issue | [`hermes plugins validate` rejects the legacy `hooks:` manifest key that the loader accepts](hermes-agent/2026-10-19-validate-legacy-hooks/) — [#141339](https://github.com/NousResearch/hermes-agent/issues/141339) | open |
 | 2026-10-19 | NousResearch/hermes-agent | PR | [Make the plugin validator accept the legacy `hooks:` key](hermes-agent/2026-10-19-validate-legacy-hooks/) — [#141340](https://github.com/NousResearch/hermes-agent/pull/141340) | open, rebased onto `main`; workflows awaiting approval |
 | 2026-10-19 | NousResearch/hermes-agent | PR | [Add `hermes-degeneracy-guard` to the plugin catalog](hermes-agent/2026-10-19-plugin-catalog-degeneracy-guard/) — [#141341](https://github.com/NousResearch/hermes-agent/pull/141341) | merged |
@@ -80,6 +86,8 @@ headers, and remain under the licence of the project they were submitted to:
 | 0xNyk/awesome-hermes-agent | no licence declared upstream; the quoted listing text is reproduced for the record |
 | langchain-ai/langchain | MIT — no patch is reproduced here, only quoted file paths and line numbers |
 | langchain-ai/langchainjs | MIT — same |
+| huggingface/smolagents | Apache-2.0 — no patch is reproduced here, only the issue and PR texts we wrote |
+| crewAIInc/crewAI | MIT — no patch is reproduced here, only the PR text and our comment |
 
 Quoted comments from maintainers are reproduced verbatim with attribution, which is what the record
 is for.

@@ -1,0 +1,49 @@
+[
+ {
+  "url": "https://api.github.com/repos/huggingface/smolagents/issues/comments/6297488568",
+  "html_url": "https://github.com/huggingface/smolagents/issues/3037#issuecomment-6297488568",
+  "issue_url": "https://api.github.com/repos/huggingface/smolagents/issues/3037",
+  "id": 6297488568,
+  "node_id": "IC_kwDONZUqgs8AAAABd1wMuA",
+  "user": {
+   "login": "simin-yuan",
+   "id": 281164480,
+   "node_id": "U_kgDOEMI6wA",
+   "avatar_url": "https://avatars.githubusercontent.com/u/281164480?v=4",
+   "gravatar_id": "",
+   "url": "https://api.github.com/users/simin-yuan",
+   "html_url": "https://github.com/simin-yuan",
+   "followers_url": "https://api.github.com/users/simin-yuan/followers",
+   "following_url": "https://api.github.com/users/simin-yuan/following{/other_user}",
+   "gists_url": "https://api.github.com/users/simin-yuan/gists{/gist_id}",
+   "starred_url": "https://api.github.com/users/simin-yuan/starred{/owner}{/repo}",
+   "subscriptions_url": "https://api.github.com/users/simin-yuan/subscriptions",
+   "organizations_url": "https://api.github.com/users/simin-yuan/orgs",
+   "repos_url": "https://api.github.com/users/simin-yuan/repos",
+   "events_url": "https://api.github.com/users/simin-yuan/events{/privacy}",
+   "received_events_url": "https://api.github.com/users/simin-yuan/received_events",
+   "type": "User",
+   "user_view_type": "public",
+   "site_admin": false
+  },
+  "created_at": "2026-10-20T17:53:55Z",
+  "updated_at": "2026-10-20T17:53:55Z",
+  "body": "Prior art on one of the two points, which I should have checked before opening this.\n\n**#2596** (opened 2026-08-02, still open) fixes exactly my point 2: it moves the sleep before the\nmultiplication, so the first retry waits `wait_seconds` and the doubling starts after that. Its tests\nassert sleeps of 1, 2, 4 with the default. I re-derived the same change without knowing that PR existed;\nthat finding is theirs, not mine.\n\n**#2662** (2026-08-20) and **#2617** (2026-08-11) touch the same class but only bring the `wait_seconds`\ndefault to 1.0 and make `reraise` wrap into `RetryError`. Neither moves the sleep, so neither covers\npoint 2, and neither has had a maintainer reply either. All three edit the same lines of\n`Retrying.__call__`, and `#2586` — which all three say they fix — has been open since 2026-07-29 without\na label.\n\nWhat is left that none of them has: `Retry-After` is never read (`grep -ri \"retry-after\" src/` returns\nnothing), and the cost of that is measurable — with `RETRY_WAIT=2` the waits between retry groups were\n5.16 s and 14.82 s while the server asked for 3 s, 40 s of wall clock for one logical call, and at the\nshipped defaults (`wait_seconds=60`) 6–20 minutes.\n\nSo the honest state of this issue: if #2596 lands, point 2 is closed and only the header work is left. I\nwould rather say that than leave four competing changes over the same two lines.\n\n*Disclosure: I used an AI assistant to help draft this comment. I will answer replies myself.*",
+  "author_association": "NONE",
+  "pin": null,
+  "reactions": {
+   "url": "https://api.github.com/repos/huggingface/smolagents/issues/comments/6297488568/reactions",
+   "total_count": 0,
+   "+1": 0,
+   "-1": 0,
+   "laugh": 0,
+   "hooray": 0,
+   "confused": 0,
+   "heart": 0,
+   "rocket": 0,
+   "eyes": 0
+  },
+  "performed_via_github_app": null,
+  "minimized": null
+ }
+]

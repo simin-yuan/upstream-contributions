@@ -1,0 +1,26 @@
+[
+ {
+  "sha": "8bb26e1c44113b87c622638c5a297173e1f90a9f",
+  "filename": "lib/crewai/src/crewai/llms/retry.py",
+  "status": "modified",
+  "additions": 4,
+  "deletions": 2,
+  "changes": 6,
+  "blob_url": "https://github.com/crewAIInc/crewAI/blob/e210cd873b0d57c435f13bf67d17a8deeb6ca8d1/lib%2Fcrewai%2Fsrc%2Fcrewai%2Fllms%2Fretry.py",
+  "raw_url": "https://github.com/crewAIInc/crewAI/raw/e210cd873b0d57c435f13bf67d17a8deeb6ca8d1/lib%2Fcrewai%2Fsrc%2Fcrewai%2Fllms%2Fretry.py",
+  "contents_url": "https://api.github.com/repos/crewAIInc/crewAI/contents/lib%2Fcrewai%2Fsrc%2Fcrewai%2Fllms%2Fretry.py?ref=e210cd873b0d57c435f13bf67d17a8deeb6ca8d1",
+  "patch": "@@ -3,7 +3,7 @@\n from __future__ import annotations\n \n import asyncio\n-from collections.abc import Awaitable, Callable, Iterator\n+from collections.abc import Awaitable, Callable, Iterator, Mapping\n import contextvars\n import random\n import time\n@@ -213,7 +213,9 @@ def _retry_after_seconds(error: BaseException) -> float | None:\n         if headers is None and isinstance(response, dict):\n             metadata = response.get(\"ResponseMetadata\") or {}\n             headers = metadata.get(\"HTTPHeaders\") or response.get(\"headers\")\n-        if not isinstance(headers, dict):\n+        if headers is None:\n+            headers = getattr(response, \"headers\", None)\n+        if not isinstance(headers, Mapping):\n             continue\n         retry_after = headers.get(\"retry-after\") or headers.get(\"Retry-After\")\n         if retry_after is None:"
+ },
+ {
+  "sha": "952cf4d3b03eedcbbb9137e958ee16ac96387ca5",
+  "filename": "lib/crewai/tests/llms/test_retry.py",
+  "status": "modified",
+  "additions": 40,
+  "deletions": 0,
+  "changes": 40,
+  "blob_url": "https://github.com/crewAIInc/crewAI/blob/e210cd873b0d57c435f13bf67d17a8deeb6ca8d1/lib%2Fcrewai%2Ftests%2Fllms%2Ftest_retry.py",
+  "raw_url": "https://github.com/crewAIInc/crewAI/raw/e210cd873b0d57c435f13bf67d17a8deeb6ca8d1/lib%2Fcrewai%2Ftests%2Fllms%2Ftest_retry.py",
+  "contents_url": "https://api.github.com/repos/crewAIInc/crewAI/contents/lib%2Fcrewai%2Ftests%2Fllms%2Ftest_retry.py?ref=e210cd873b0d57c435f13bf67d17a8deeb6ca8d1",
+  "patch": "@@ -2,6 +2,8 @@\n \n from typing import Any\n \n+import httpx\n+from openai import RateLimitError\n import pytest\n \n from crewai.llms.base_llm import BaseLLM\n@@ -88,6 +90,7 @@ def test_get_retry_delay_seconds_applies_jitter_and_honors_retry_after() -> None\n \n \n def test_run_with_rate_limit_retry_retries_with_backoff() -> None:\n+    \"\"\"Retry a synchronous provider throttle using the calculated backoff.\"\"\"\n     outcomes: list[str | Exception] = [\n         RuntimeError(\"rate limit exceeded\"),\n         \"complete\",\n@@ -102,18 +105,55 @@ def test_run_with_rate_limit_retry_retries_with_backoff() -> None:\n     assert delays == [pytest.approx(1, abs=0.2)]\n \n \n+@pytest.mark.parametrize(\"asynchronous\", [False, True])\n+@pytest.mark.asyncio\n+async def test_retry_honors_sdk_response_retry_after(asynchronous: bool) -> None:\n+    \"\"\"Honor response Retry-After headers in synchronous and asynchronous calls.\"\"\"\n+    response = httpx.Response(\n+        429,\n+        headers={\"Retry-After\": \"7\"},\n+        request=httpx.Request(\"POST\", \"https://example.com/chat/completions\"),\n+    )\n+    outcomes: list[str | Exception] = [\n+        RateLimitError(\"rate limit exceeded\", response=response, body=None),\n+        \"complete\",\n+    ]\n+    delays: list[float] = []\n+\n+    async def record_delay(delay: float) -> None:\n+        \"\"\"Record the requested sleep without delaying the test.\"\"\"\n+        delays.append(delay)\n+\n+    async def operation() -> str:\n+        \"\"\"Return the next scripted result or raise its provider error.\"\"\"\n+        return _pop_outcome(outcomes)\n+\n+    if asynchronous:\n+        result = await arun_with_rate_limit_retry(operation, sleep=record_delay)\n+    else:\n+        result = run_with_rate_limit_retry(\n+            lambda: _pop_outcome(outcomes), sleep=delays.append\n+        )\n+\n+    assert result == \"complete\"\n+    assert delays == [7]\n+\n+\n @pytest.mark.asyncio\n async def test_arun_with_rate_limit_retry_retries_with_backoff() -> None:\n+    \"\"\"Retry an asynchronous provider throttle using the calculated backoff.\"\"\"\n     outcomes: list[str | Exception] = [\n         RuntimeError(\"rate limit exceeded\"),\n         \"complete\",\n     ]\n     delays: list[float] = []\n \n     async def record_delay(delay: float) -> None:\n+        \"\"\"Record the requested sleep without delaying the test.\"\"\"\n         delays.append(delay)\n \n     async def operation() -> str:\n+        \"\"\"Return the next scripted result or raise its provider error.\"\"\"\n         return _pop_outcome(outcomes)\n \n     result = await arun_with_rate_limit_retry(operation, sleep=record_delay)"
+ }
+]

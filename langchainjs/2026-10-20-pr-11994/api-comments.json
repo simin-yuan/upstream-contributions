@@ -1,0 +1,90 @@
+[
+ {
+  "url": "https://api.github.com/repos/langchain-ai/langchainjs/issues/comments/6294103442",
+  "html_url": "https://github.com/langchain-ai/langchainjs/pull/11994#issuecomment-6294103442",
+  "issue_url": "https://api.github.com/repos/langchain-ai/langchainjs/issues/11994",
+  "id": 6294103442,
+  "node_id": "IC_kwDOI6n6iM8AAAABdyhlkg",
+  "user": {
+   "login": "changeset-bot[bot]",
+   "id": 49419645,
+   "node_id": "MDM6Qm90NDk0MTk2NDU=",
+   "avatar_url": "https://avatars.githubusercontent.com/in/28616?v=4",
+   "gravatar_id": "",
+   "url": "https://api.github.com/users/changeset-bot%5Bbot%5D",
+   "html_url": "https://github.com/apps/changeset-bot",
+   "followers_url": "https://api.github.com/users/changeset-bot%5Bbot%5D/followers",
+   "following_url": "https://api.github.com/users/changeset-bot%5Bbot%5D/following{/other_user}",
+   "gists_url": "https://api.github.com/users/changeset-bot%5Bbot%5D/gists{/gist_id}",
+   "starred_url": "https://api.github.com/users/changeset-bot%5Bbot%5D/starred{/owner}{/repo}",
+   "subscriptions_url": "https://api.github.com/users/changeset-bot%5Bbot%5D/subscriptions",
+   "organizations_url": "https://api.github.com/users/changeset-bot%5Bbot%5D/orgs",
+   "repos_url": "https://api.github.com/users/changeset-bot%5Bbot%5D/repos",
+   "events_url": "https://api.github.com/users/changeset-bot%5Bbot%5D/events{/privacy}",
+   "received_events_url": "https://api.github.com/users/changeset-bot%5Bbot%5D/received_events",
+   "type": "Bot",
+   "user_view_type": "public",
+   "site_admin": false
+  },
+  "created_at": "2026-10-20T15:08:26Z",
+  "updated_at": "2026-10-20T15:08:26Z",
+  "body": "### 🦋 Changeset detected\n\nLatest commit: eee12e16777b5f53e4ebc25db6b28678b4fb183e\n\n**The changes in this PR will be included in the next version bump.**\n\n<details><summary>This PR includes changesets to release 1 package</summary>\n\n  | Name            | Type  |\n| --------------- | ----- |\n| @langchain/core | Patch |\n\n</details>\n\nNot sure what this means? [Click here to learn what changesets are](https://changesets.dev/faq).\n\n[Click here if you're a maintainer who wants to add another changeset to this PR](https://github.com/simin-yuan/langchainjs/new/fix/core-truncated-streamed-tool-calls?filename=.changeset/cozy-birds-sleep.md&value=---%0A%22%40langchain%2Fcore%22%3A%20patch%0A---%0A%0Afix(core)%3A%20don't%20turn%20truncated%20streamed%20tool-call%20arguments%20into%20a%20tool%20call%0A)\n\n",
+  "author_association": "NONE",
+  "reactions": {
+   "url": "https://api.github.com/repos/langchain-ai/langchainjs/issues/comments/6294103442/reactions",
+   "total_count": 0,
+   "+1": 0,
+   "-1": 0,
+   "laugh": 0,
+   "hooray": 0,
+   "confused": 0,
+   "heart": 0,
+   "rocket": 0,
+   "eyes": 0
+  },
+  "performed_via_github_app": {
+   "id": 28616,
+   "client_id": "Iv1.18f75c290f300f7b",
+   "slug": "changeset-bot",
+   "node_id": "MDM6QXBwMjg2MTY=",
+   "owner": {
+    "login": "changesets",
+    "id": 51163350,
+    "node_id": "MDEyOk9yZ2FuaXphdGlvbjUxMTYzMzUw",
+    "avatar_url": "https://avatars.githubusercontent.com/u/51163350?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/changesets",
+    "html_url": "https://github.com/changesets",
+    "followers_url": "https://api.github.com/users/changesets/followers",
+    "following_url": "https://api.github.com/users/changesets/following{/other_user}",
+    "gists_url": "https://api.github.com/users/changesets/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/changesets/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/changesets/subscriptions",
+    "organizations_url": "https://api.github.com/users/changesets/orgs",
+    "repos_url": "https://api.github.com/users/changesets/repos",
+    "events_url": "https://api.github.com/users/changesets/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/changesets/received_events",
+    "type": "Organization",
+    "user_view_type": "public",
+    "site_admin": false
+   },
+   "name": "changeset-bot",
+   "description": "This bot will comment on PRs saying that either a user might need to add a changeset(note that PRs changing things like documentation generally don't need a changeset)or say that the PR is good and already has a changeset.\r\n\r\n<img width=\"1552\" alt=\"screenshot of changeset bot message from https://github.com/Thinkmill/manypkg/pull/18 before a changeset was added\" src=\"https://user-images.githubusercontent.com/11481355/66183943-dc418680-e6bd-11e9-998d-e43f90a974bd.png\">\r\n\r\n<img width=\"1552\" alt=\"screenshot of the changeset bot message from https://github.com/Thinkmill/manypkg/pull/18 showing the changeset good to go message\" src=\"https://user-images.githubusercontent.com/11481355/66184229-cf716280-e6be-11e9-950e-0f64a31dbf15.png\">\r\n\r\n\r\nSometimes, a contributor won't add a changeset to a PR but you might want to merge in the PR without having to wait on them to add it. To address this, this bot adds a link with the filename pre-filled to add a changeset so all you have to do is write the changeset and click commit.\r\n\r\n<img width=\"1552\" alt=\"screenshot of the changeset bot message from https://github.com/Thinkmill/manypkg/pull/18 focused on the create a changeset link\" src=\"https://user-images.githubusercontent.com/11481355/66184052-3a6e6980-e6be-11e9-8e62-8fd9d49af587.png\">\r\n\r\n<img width=\"1552\" alt=\"screenshot of creating a changeset directly on GitHub\" src=\"https://user-images.githubusercontent.com/11481355/66184086-5bcf5580-e6be-11e9-8227-c1ed6d96b5d2.png\">\r\n\r\n<img width=\"1552\" alt=\"screenshot of the GitHub file creation page focusing on the commit button\" src=\"https://user-images.githubusercontent.com/11481355/66184181-a94bc280-e6be-11e9-85fc-32edcd5b05ce.png\">\r\n\r\n<img width=\"1552\" alt=\"screenshot of the changeset bot message from https://github.com/Thinkmill/manypkg/pull/18 showing the changeset good to go message\" src=\"https://user-images.githubusercontent.com/11481355/66184229-cf716280-e6be-11e9-950e-0f64a31dbf15.png\">\r\n\r\nWhen writing the changeset, it should look something like this with the packages that are being released in the YAML front matter with associated semver bump types and the summary of the changes in markdown.\r\n\r\n```markdown\r\n---\r\n'@changesets/cli': major\r\n'@changesets/read': minor\r\n---\r\n\r\nA very helpful description of the changes\r\n```",
+   "external_url": "https://github.com/changesets/changesets",
+   "html_url": "https://github.com/apps/changeset-bot",
+   "created_at": "2019-04-09T00:12:46Z",
+   "updated_at": "2026-04-30T05:58:26Z",
+   "permissions": {
+    "contents": "read",
+    "issues": "write",
+    "metadata": "read",
+    "pull_requests": "write"
+   },
+   "events": [
+    "issues",
+    "pull_request"
+   ]
+  },
+  "minimized": null
+ }
+]
