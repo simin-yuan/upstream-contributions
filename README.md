@@ -30,6 +30,8 @@ This repository is snapshotted too:
 
 | Date | Project | Type | Title | Status |
 |---|---|---|---|---|
+| 2026-10-22 | NousResearch/hermes-agent | PR | [Pass `platform` to the tool-path hooks](hermes-agent/2026-10-22-tool-hooks-platform/) — [#142974](https://github.com/NousResearch/hermes-agent/pull/142974) | open, `P3` `type/feature` `comp/agent` `comp/cli` `comp/plugins` `area/i18n`; workflows awaiting approval, no review |
+| 2026-10-22 | NousResearch/hermes-agent | issue | [`platform` is missing from `pre_tool_call` / `post_tool_call` / `transform_tool_result`](hermes-agent/2026-10-22-tool-hooks-platform/) — [#142973](https://github.com/NousResearch/hermes-agent/issues/142973) | open, `P2` `comp/agent` `type/bug`; maintainer triaged, unassigned |
 | 2026-10-21 | NousResearch/hermes-agent | PR | [Add `skill-lineage` to the plugin catalog](hermes-agent/2026-10-21-catalog-skill-lineage/) — [#142381](https://github.com/NousResearch/hermes-agent/pull/142381) | open, `P3` `comp/plugins` `type/feature`; a review is required |
 | 2026-10-21 | NousResearch/hermes-agent | PR | [`api_max_retries` counts attempts, not retries](hermes-agent/2026-10-21-api-max-retries-attempts/) — [#142179](https://github.com/NousResearch/hermes-agent/pull/142179) | open, no review |
 | 2026-10-20 | NousResearch/hermes-agent | PR | [Add `provenance-gate` to the plugin catalog](hermes-agent/2026-10-20-plugin-catalog-provenance-gate/) — [#141935](https://github.com/NousResearch/hermes-agent/pull/141935) | merged |

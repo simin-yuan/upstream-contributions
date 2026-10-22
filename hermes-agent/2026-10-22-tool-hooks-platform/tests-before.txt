@@ -1,0 +1,275 @@
+Discovered 2 test files (~7 tests) under ['tests\\agent\\test_tool_hook_platform.py', 'tests\\cron\\test_cron_tool_hook_platform.py']; running with -j 12
+[ 85.7% |     6/~7 | ✓0 | ✗6] ✗ tests\agent\test_tool_hook_platform.py (6✗, 13.7s)
+
+  ╔╍ Failed: tests\agent\test_tool_hook_platform.py ╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍
+  ║         out = _apply_transform_tool_result_hook(
+  ║             "terminal", {}, "raw", 1, _CallIds(**tool_hook_ids(_agent("cron"), "t", "c")))
+  ║         assert out == "rewritten"
+  ║ >       assert seen["platform"] == "cron"
+  ║                ^^^^^^^^^^^^^^^^
+  ║ E       KeyError: 'platform'
+  ║ 
+  ║ tests\agent\test_tool_hook_platform.py:80: KeyError
+  ║ _________ test_shell_hook_payload_carries_tool_hook_identity_in_extra _________
+  ║ 
+  ║     def test_shell_hook_payload_carries_tool_hook_identity_in_extra():
+  ║         """Shell hooks: identity fields the payload does not promote land in ``extra``."""
+  ║         from agent.shell_hooks import _payload_fields
+  ║     
+  ║         payload = _payload_fields({"tool_name": "terminal", "args": {},
+  ║                                    **tool_hook_ids(_agent("cron"), "task-1", "call-1")})
+  ║         assert "platform" not in payload
+  ║ >       assert payload["extra"]["platform"] == "cron"
+  ║                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  ║ E       KeyError: 'platform'
+  ║ 
+  ║ tests\agent\test_tool_hook_platform.py:90: KeyError
+  ║ =========================== short test summary info ===========================
+  ║ FAILED tests/agent/test_tool_hook_platform.py::test_tool_hook_ids_carries_agent_platform
+  ║ FAILED tests/agent/test_tool_hook_platform.py::test_call_ids_round_trips_platform_into_hook_kwargs
+  ║ FAILED tests/agent/test_tool_hook_platform.py::test_pre_tool_call_hook_receives_platform
+  ║ FAILED tests/agent/test_tool_hook_platform.py::test_post_tool_call_hook_receives_platform
+  ║ FAILED tests/agent/test_tool_hook_platform.py::test_transform_tool_result_hook_receives_platform
+  ║ FAILED tests/agent/test_tool_hook_platform.py::test_shell_hook_payload_carries_tool_hook_identity_in_extra
+  ║ ============================== 6 failed in 4.74s ==============================
+  ║
+  ║  Repro: python -m pytest tests\agent\test_tool_hook_platform.py
+  ╚╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍
+
+[100.0% |     7/~7 | ✓0 | ✗7] ✗ tests\cron\test_cron_tool_hook_platform.py (1✗, 32.4s)
+
+  ╔╍ Failed: tests\cron\test_cron_tool_hook_platform.py ╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍
+  ║         (plugin_dir / "__init__.py").write_text(_PLUGIN)
+  ║         note = home / "note.txt"
+  ║         with FakeLLMServer([ToolCall("read_file", {"path": str(note)}), Text("done")]) as srv:
+  ║             write_hermes_home(home, srv.base_url,
+  ║                               extra_config="plugins:\n  enabled: [cron-platform-probe]\n")
+  ║             note.write_text("hello\n")
+  ║             (home / "cron").mkdir()
+  ║             (home / "cron" / "jobs.json").write_text(json.dumps({"jobs": [{
+  ║                 "id": "platform-probe", "name": "platform probe", "prompt": "read the note",
+  ║                 "schedule": {"kind": "interval", "minutes": 240},
+  ║                 "next_run_at": (now() - timedelta(minutes=1)).isoformat(),
+  ║                 "enabled": True, "state": "scheduled", "deliver": "local",
+  ║                 "repeat": {"times": None, "completed": 0}}]}))
+  ║             env = {k: v for k, v in os.environ.items()
+  ║                    if not k.startswith(("HERMES_", "_HERMES_"))
+  ║                    and not k.endswith(("_API_KEY", "_TOKEN"))}
+  ║             env.update(HERMES_HOME=str(home), PYTHONPATH=str(Path(__file__).resolve().parents[2]))
+  ║             result = subprocess.run([sys.executable, "-c", _TICK], env=env, stdin=subprocess.DEVNULL,
+  ║                                     capture_output=True, text=True, timeout=180, check=False)
+  ║         assert result.returncode == 0, result.stdout + result.stderr
+  ║         seen = json.loads((home / "seen.json").read_text())
+  ║     
+  ║         assert seen["tool"] == "read_file"
+  ║ >       assert seen["platform"] == "cron"
+  ║ E       AssertionError: assert None == 'cron'
+  ║ 
+  ║ tests\cron\test_cron_tool_hook_platform.py:68: AssertionError
+  ║ =========================== short test summary info ===========================
+  ║ FAILED tests/cron/test_cron_tool_hook_platform.py::test_tool_hook_in_a_ticked_job_sees_platform_cron
+  ║ ============================= 1 failed in 13.59s ==============================
+  ║
+  ║  Repro: python -m pytest tests\cron\test_cron_tool_hook_platform.py
+  ╚╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍╍
+
+
+=== Summary: 2 files, 0 tests passed, 7 failed (100% complete) in 33.8s (12 workers) ===
+
+=== Per-file subprocess time distribution ===
+  Files:   2
+  Total subprocess CPU-wall: 46.0s  (runner wall: 33.8s, parallelism: 12x)
+  P50: 32.35s  P90: 32.35s  P95: 32.35s  P99: 32.35s  Max: 32.35s
+  <1s: 0 files (0%)  <2s: 0 files (0%)
+  Top 10 slowest:
+     32.35s  tests\cron\test_cron_tool_hook_platform.py
+     13.66s  tests\agent\test_tool_hook_platform.py
+
+=== Failure output ===
+
+--- tests\agent\test_tool_hook_platform.py ---
+============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: <base-worktree>
+configfile: pyproject.toml
+plugins: anyio-4.14.2, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 6 items
+
+tests\agent\test_tool_hook_platform.py FFFFFF                            [100%]
+
+================================== FAILURES ===================================
+__________________ test_tool_hook_ids_carries_agent_platform __________________
+
+    def test_tool_hook_ids_carries_agent_platform():
+        ids = tool_hook_ids(_agent("cron"), "task-1", "call-1")
+>       assert ids["platform"] == "cron"
+               ^^^^^^^^^^^^^^^
+E       KeyError: 'platform'
+
+tests\agent\test_tool_hook_platform.py:25: KeyError
+_____________ test_call_ids_round_trips_platform_into_hook_kwargs _____________
+
+    def test_call_ids_round_trips_platform_into_hook_kwargs():
+        ids = _CallIds(**tool_hook_ids(_agent("subagent"), "task-1", "call-1"))
+>       assert ids.hook_kwargs()["platform"] == "subagent"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'platform'
+
+tests\agent\test_tool_hook_platform.py:32: KeyError
+__________________ test_pre_tool_call_hook_receives_platform __________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000186D16D0050>
+
+    def test_pre_tool_call_hook_receives_platform(monkeypatch):
+        from hermes_cli import lifecycle
+        from hermes_cli.plugins import _dispatch_pre_tool_call_hooks
+    
+        seen = {}
+    
+        def fake_invoke_hook(hook_name, **kwargs):
+            seen.update(kwargs)
+            return []
+    
+        monkeypatch.setattr(lifecycle, "invoke_hook", fake_invoke_hook)
+>       _dispatch_pre_tool_call_hooks("terminal", {"command": "echo hi"}, task_id="t", platform="cron")
+
+tests\agent\test_tool_hook_platform.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tool_name = 'terminal', args = {'command': 'echo hi'}
+hook_kwargs = {'task_id': 't', 'platform': 'cron'}
+
+    def _dispatch_pre_tool_call_hooks(
+        tool_name: str, args: Optional[dict[str, Any]], **hook_kwargs: Any
+    ) -> tuple[Optional[str], Optional[dict[str, Any]]]:
+        """Invoke ``pre_tool_call`` hooks once; return ``(block_message, modified_args)`` — the resolved
+        block/approve message (``None`` to proceed) and merged ``modify`` args (``None`` if none)."""
+>       details = _get_pre_tool_call_directive_details(tool_name, args, **hook_kwargs)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: _get_pre_tool_call_directive_details() got an unexpected keyword argument 'platform'
+
+hermes_cli\plugins.py:2096: TypeError
+_________________ test_post_tool_call_hook_receives_platform __________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000186D17356A0>
+
+    def test_post_tool_call_hook_receives_platform(monkeypatch):
+        from hermes_cli import lifecycle
+    
+        seen = {}
+    
+        def fake_invoke_hook(hook_name, **kwargs):
+            seen.update(kwargs)
+            return []
+    
+        monkeypatch.setattr(lifecycle, "has_hook", lambda _name: True)
+        monkeypatch.setattr(lifecycle, "invoke_hook", fake_invoke_hook)
+>       _emit_post_tool_call_hook(function_name="terminal", function_args={}, result="ok",
+                                  platform="curator")
+E       TypeError: _emit_post_tool_call_hook() got an unexpected keyword argument 'platform'
+
+tests\agent\test_tool_hook_platform.py:61: TypeError
+______________ test_transform_tool_result_hook_receives_platform ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000186D17358C0>
+
+    def test_transform_tool_result_hook_receives_platform(monkeypatch):
+        from hermes_cli import lifecycle
+    
+        seen = {}
+    
+        def fake_invoke_hook(hook_name, **kwargs):
+            seen.update(kwargs)
+            return ["rewritten"]
+    
+        monkeypatch.setattr(lifecycle, "has_hook", lambda _name: True)
+        monkeypatch.setattr(lifecycle, "invoke_hook", fake_invoke_hook)
+        out = _apply_transform_tool_result_hook(
+            "terminal", {}, "raw", 1, _CallIds(**tool_hook_ids(_agent("cron"), "t", "c")))
+        assert out == "rewritten"
+>       assert seen["platform"] == "cron"
+               ^^^^^^^^^^^^^^^^
+E       KeyError: 'platform'
+
+tests\agent\test_tool_hook_platform.py:80: KeyError
+_________ test_shell_hook_payload_carries_tool_hook_identity_in_extra _________
+
+    def test_shell_hook_payload_carries_tool_hook_identity_in_extra():
+        """Shell hooks: identity fields the payload does not promote land in ``extra``."""
+        from agent.shell_hooks import _payload_fields
+    
+        payload = _payload_fields({"tool_name": "terminal", "args": {},
+                                   **tool_hook_ids(_agent("cron"), "task-1", "call-1")})
+        assert "platform" not in payload
+>       assert payload["extra"]["platform"] == "cron"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'platform'
+
+tests\agent\test_tool_hook_platform.py:90: KeyError
+=========================== short test summary info ===========================
+FAILED tests/agent/test_tool_hook_platform.py::test_tool_hook_ids_carries_agent_platform
+FAILED tests/agent/test_tool_hook_platform.py::test_call_ids_round_trips_platform_into_hook_kwargs
+FAILED tests/agent/test_tool_hook_platform.py::test_pre_tool_call_hook_receives_platform
+FAILED tests/agent/test_tool_hook_platform.py::test_post_tool_call_hook_receives_platform
+FAILED tests/agent/test_tool_hook_platform.py::test_transform_tool_result_hook_receives_platform
+FAILED tests/agent/test_tool_hook_platform.py::test_shell_hook_payload_carries_tool_hook_identity_in_extra
+============================== 6 failed in 4.74s ==============================
+
+--- tests\cron\test_cron_tool_hook_platform.py ---
+============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: <base-worktree>
+configfile: pyproject.toml
+plugins: anyio-4.14.2, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests\cron\test_cron_tool_hook_platform.py F                             [100%]
+
+================================== FAILURES ===================================
+______________ test_tool_hook_in_a_ticked_job_sees_platform_cron ______________
+
+tmp_path = WindowsPath('<tmp>/hermes-pytest/pytest-of-<user>/pytest-0/test_tool_hook_in_a_ticked_job0')
+
+    def test_tool_hook_in_a_ticked_job_sees_platform_cron(tmp_path):
+        from hermes_time import now
+    
+        home = tmp_path / "home"
+        plugin_dir = home / "plugins" / "cron-platform-probe"
+        plugin_dir.mkdir(parents=True)
+        (plugin_dir / "plugin.yaml").write_text("name: cron-platform-probe\nversion: 0.0.1\n")
+        (plugin_dir / "__init__.py").write_text(_PLUGIN)
+        note = home / "note.txt"
+        with FakeLLMServer([ToolCall("read_file", {"path": str(note)}), Text("done")]) as srv:
+            write_hermes_home(home, srv.base_url,
+                              extra_config="plugins:\n  enabled: [cron-platform-probe]\n")
+            note.write_text("hello\n")
+            (home / "cron").mkdir()
+            (home / "cron" / "jobs.json").write_text(json.dumps({"jobs": [{
+                "id": "platform-probe", "name": "platform probe", "prompt": "read the note",
+                "schedule": {"kind": "interval", "minutes": 240},
+                "next_run_at": (now() - timedelta(minutes=1)).isoformat(),
+                "enabled": True, "state": "scheduled", "deliver": "local",
+                "repeat": {"times": None, "completed": 0}}]}))
+            env = {k: v for k, v in os.environ.items()
+                   if not k.startswith(("HERMES_", "_HERMES_"))
+                   and not k.endswith(("_API_KEY", "_TOKEN"))}
+            env.update(HERMES_HOME=str(home), PYTHONPATH=str(Path(__file__).resolve().parents[2]))
+            result = subprocess.run([sys.executable, "-c", _TICK], env=env, stdin=subprocess.DEVNULL,
+                                    capture_output=True, text=True, timeout=180, check=False)
+        assert result.returncode == 0, result.stdout + result.stderr
+        seen = json.loads((home / "seen.json").read_text())
+    
+        assert seen["tool"] == "read_file"
+>       assert seen["platform"] == "cron"
+E       AssertionError: assert None == 'cron'
+
+tests\cron\test_cron_tool_hook_platform.py:68: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/cron/test_cron_tool_hook_platform.py::test_tool_hook_in_a_ticked_job_sees_platform_cron
+============================= 1 failed in 13.59s ==============================
+
+=== 2 files with test failures (7 tests failed) ===
+  tests\agent\test_tool_hook_platform.py  (6 tests failed)
+  tests\cron\test_cron_tool_hook_platform.py  (1 test failed)

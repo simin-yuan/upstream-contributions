@@ -1,0 +1,63 @@
+
+== tool_hook_ids def ==
+agent/inline_tool_executors.py:20: def tool_hook_ids(agent, effective_task_id: str, tool_call_id: Optional[str]) -> dict[str, str]:
+
+== tool_hook_ids call ==
+agent/agent_runtime_helpers.py:2500: function_name, function_args, **tool_hook_ids(agent, effective_task_id, tool_call_id),
+agent/agent_runtime_helpers.py:2523: hook_ids = tool_hook_ids(agent, effective_task_id, tool_call_id)
+agent/inline_tool_executors.py:20: def tool_hook_ids(agent, effective_task_id: str, tool_call_id: Optional[str]) -> dict[str, str]:
+agent/inline_tool_executors.py:57: **tool_hook_ids(agent, effective_task_id, tool_call_id),
+agent/inline_tool_executors.py:87: _CallIds(**tool_hook_ids(agent, effective_task_id, tool_call_id)),
+agent/tool_executor.py:680: **tool_hook_ids(agent, ref.task_id, ref.call_id),
+agent/tool_executor.py:814: **tool_hook_ids(agent, effective_task_id, tool_call_id),
+agent/tool_executor.py:824: **tool_hook_ids(agent, effective_task_id, tool_call_id),
+
+== _CallIds construct ==
+model_tools.py:694: **_CallIds(task_id, session_id, tool_call_id, turn_id, api_request_id, platform).hook_kwargs(),
+model_tools.py:896: ids = _CallIds(task_id, session_id, tool_call_id, turn_id, api_request_id, platform)
+agent/inline_tool_executors.py:87: _CallIds(**tool_hook_ids(agent, effective_task_id, tool_call_id)),
+
+== _dispatch_pre_tool_call_hooks( ==
+model_tools.py:781: block_message, modified_args = _dispatch_pre_tool_call_hooks(
+agent/agent_runtime_helpers.py:2499: block_message, modified_args = _dispatch_pre_tool_call_hooks(
+agent/tool_executor.py:677: block_msg, modified_args = _dispatch_pre_tool_call_hooks(
+hermes_cli/plugins.py:2056: return _dispatch_pre_tool_call_hooks(tool_name, args, **hook_kwargs)[0]
+hermes_cli/plugins.py:2091: def _dispatch_pre_tool_call_hooks(
+
+== _get_pre_tool_call_directive_details( ==
+hermes_cli/plugins.py:1979: def _get_pre_tool_call_directive_details(
+hermes_cli/plugins.py:2039: details = _get_pre_tool_call_directive_details(tool_name, args, **hook_kwargs)
+hermes_cli/plugins.py:2096: details = _get_pre_tool_call_directive_details(tool_name, args, **hook_kwargs)
+
+== _emit_post_tool_call_hook( ==
+model_tools.py:675: def _emit_post_tool_call_hook(
+model_tools.py:901: _emit_post_tool_call_hook(function_name=function_name, function_args=function_args, result=result,
+agent/inline_tool_executors.py:53: _emit_post_tool_call_hook(
+
+== _apply_transform_tool_result_hook( ==
+model_tools.py:850: def _apply_transform_tool_result_hook(function_name: str, function_args: dict[str, Any], result: Any, duration_ms: int,
+model_tools.py:962: return _apply_transform_tool_result_hook(function_name, function_args, result, duration_ms, ids)
+agent/inline_tool_executors.py:85: return _apply_transform_tool_result_hook(
+
+== handle_function_call( ==
+model_tools.py:5: schemas sent to the model) and handle_function_call() (dispatch with
+model_tools.py:874: def handle_function_call(
+model_tools.py:920: return handle_function_call(
+agent/agent_runtime_helpers.py:2583: return model_tools.handle_function_call(function_name, next_args, effective_task_id, **dispatch_kwargs)
+agent/tool_executor.py:1721: return model_tools.handle_function_call(
+tools/code_execution_rpc.py:30: return lambda tool_name, tool_args: handle_function_call(tool_name, tool_args, task_id=task_id)
+tools/code_kernel.py:277: return handle_function_call(tool_name, tool_args, task_id=self.task_id)
+tui_gateway/methods_connectors.py:162: raw = model_tools.handle_function_call(
+tools/connectors/dispatch.py:50: payload = handle_function_call(
+agent/transports/hermes_tools_mcp_server.py:53: # Each name MUST match a registered Hermes tool ``model_tools.handle_function_call()`` can dispatch.
+agent/transports/hermes_tools_mcp_server.py:106: return handle_function_call(tool_name, {k: v for k, v in kwargs.items() if v is not None})
+
+== pre_tool_call emit ==
+agent/shell_hooks.py:45: _TOOL_EVENTS = frozenset({"pre_tool_call", "post_tool_call"})
+hermes_cli/hooks.py:212: specs = [s for s in specs if s.event not in {"pre_tool_call", "post_tool_call"} or s.matches_tool(for_tool)]
+hermes_cli/plugins.py:108: "pre_tool_call", "post_tool_call", "transform_terminal_output", "transform_tool_result",
+hermes_cli/plugins.py:1995: hook_results = invoke_lifecycle_hook(
+hermes_cli/plugins.py:1996: "pre_tool_call", tool_name=tool_name, args=args if isinstance(args, dict) else {},
+plugins/disk-cleanup/__init__.py:232: ctx.register_hook("pre_tool_call", _on_pre_tool_call)
+plugins/security-guidance/__init__.py:132: ctx.register_hook("pre_tool_call", _on_pre_tool_call)
+plugins/platforms/raft/adapter.py:576: ("pre_tool_call", _on_pre_tool_call), ("post_tool_call", _on_post_tool_call),

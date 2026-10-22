@@ -1,0 +1,424 @@
+From d08a850f92de7f764a9a0f4d92bad838ee47f847 Mon Sep 17 00:00:00 2001
+From: "Simin (Simon) Yuan" <yleven120@gmail.com>
+Date: Thu, 22 Oct 2026 16:30:15 +0800
+Subject: [PATCH] feat(hooks): pass platform to the tool-path hooks
+
+pre_llm_call has carried `platform` all along; pre_tool_call, post_tool_call and
+transform_tool_result never did. A policy plugin therefore cannot tell an attended
+turn from an unattended one (cron / subagent / curator) at tool time, which is
+exactly where a gate has to decide whether to veto or only record.
+
+Thread `agent.platform` through the shared identity set instead of per-call-site
+plumbing: tool_hook_ids() adds the field, _CallIds carries it into the two
+model_tools paths, and the directive helper forwards it. `hermes hooks test` /
+`doctor` sample payloads gain the field too, and the hook catalog documents it in
+both locales.
+
+Observable effects beyond the three hooks: shell hooks receive it in `extra`,
+and tool-side middleware now sees the same `platform` the LLM-side middleware
+already gets (agent/turn_api_request.py), so the two sides agree.
+
+Callers without an agent (code kernel, MCP bridge, TUI/connector dispatch) pass
+nothing and keep the empty string, i.e. today's behaviour.
+
+Tests: tests/agent/test_tool_hook_platform.py (unit, all red on the base),
+tests/cron/test_cron_tool_hook_platform.py (real scheduler tick + real plugin
+load; asserts platform == "cron").
+---
+ agent/agent_runtime_helpers.py                |  7 +-
+ agent/inline_tool_executors.py                |  7 +-
+ agent/tool_executor.py                        |  1 +
+ hermes_cli/hooks.py                           |  3 +-
+ hermes_cli/plugins.py                         |  4 +-
+ model_tools.py                                | 15 ++--
+ tests/agent/test_tool_hook_platform.py        | 90 +++++++++++++++++++
+ tests/cron/test_cron_tool_hook_platform.py    | 68 ++++++++++++++
+ website/docs/user-guide/features/hooks.md     |  7 +-
+ .../current/user-guide/features/hooks.md      |  7 +-
+ 10 files changed, 189 insertions(+), 20 deletions(-)
+ create mode 100644 tests/agent/test_tool_hook_platform.py
+ create mode 100644 tests/cron/test_cron_tool_hook_platform.py
+
+diff --git a/agent/agent_runtime_helpers.py b/agent/agent_runtime_helpers.py
+index 36f9d4b982..064aacc5c2 100644
+--- a/agent/agent_runtime_helpers.py
++++ b/agent/agent_runtime_helpers.py
+@@ -2494,12 +2494,10 @@ def switch_model(
+ def _pre_tool_block_message(agent, function_name, function_args, effective_task_id, tool_call_id, middleware_trace):
+     """Plugin pre-tool-call hook verdict: ``(block_message, function_args)``; failures never block."""
+     try:
++        from agent.inline_tool_executors import tool_hook_ids
+         from hermes_cli.plugins import _dispatch_pre_tool_call_hooks
+         block_message, modified_args = _dispatch_pre_tool_call_hooks(
+-            function_name, function_args, task_id=effective_task_id or "",
+-            session_id=getattr(agent, "session_id", "") or "", tool_call_id=tool_call_id or "",
+-            turn_id=getattr(agent, "_current_turn_id", "") or "",
+-            api_request_id=getattr(agent, "_current_api_request_id", "") or "",
++            function_name, function_args, **tool_hook_ids(agent, effective_task_id, tool_call_id),
+             middleware_trace=list(middleware_trace),
+         )
+         return block_message, (modified_args if modified_args is not None else function_args)
+@@ -2572,6 +2570,7 @@ def invoke_tool(agent, function_name: str, function_args: dict, effective_task_i
+                 tool_call_id=tool_call_id, session_id=agent.session_id or "",
+                 turn_id=getattr(agent, "_current_turn_id", "") or "",
+                 api_request_id=getattr(agent, "_current_api_request_id", "") or "",
++                platform=getattr(agent, "platform", None) or "",
+                 enabled_tools=list(agent.valid_tool_names) if agent.valid_tool_names else None,
+                 skip_pre_tool_call_hook=True, skip_tool_request_middleware=True,
+                 enabled_toolsets=getattr(agent, "enabled_toolsets", None),
+diff --git a/agent/inline_tool_executors.py b/agent/inline_tool_executors.py
+index 3223e61646..3f530acafe 100644
+--- a/agent/inline_tool_executors.py
++++ b/agent/inline_tool_executors.py
+@@ -18,13 +18,18 @@ from tools.arg_coercion import coerce_tool_args
+ 
+ 
+ def tool_hook_ids(agent, effective_task_id: str, tool_call_id: Optional[str]) -> dict[str, str]:
+-    """Identity kwargs every tool hook/middleware call carries (all coerced to ``""``)."""
++    """Identity kwargs every tool hook/middleware call carries (all coerced to ``""``).
++
++    ``platform`` is the same value ``pre_llm_call`` passes (``agent.platform``), so a plugin that
++    gates tool calls can tell an interactive turn from a ``cron`` / ``subagent`` / ``curator`` run.
++    """
+     return {
+         "task_id": effective_task_id or "",
+         "session_id": getattr(agent, "session_id", "") or "",
+         "tool_call_id": tool_call_id or "",
+         "turn_id": getattr(agent, "_current_turn_id", "") or "",
+         "api_request_id": getattr(agent, "_current_api_request_id", "") or "",
++        "platform": getattr(agent, "platform", None) or "",
+     }
+ 
+ 
+diff --git a/agent/tool_executor.py b/agent/tool_executor.py
+index cb58137a2a..0a4e377c0f 100644
+--- a/agent/tool_executor.py
++++ b/agent/tool_executor.py
+@@ -1726,6 +1726,7 @@ def _resolve_sequential_dispatch(agent, ref: _ToolCallRef, messages: list) -> _S
+                 session_id=agent.session_id or "",
+                 turn_id=getattr(agent, "_current_turn_id", "") or "",
+                 api_request_id=getattr(agent, "_current_api_request_id", "") or "",
++                platform=getattr(agent, "platform", None) or "",
+                 enabled_tools=list(agent.valid_tool_names) if agent.valid_tool_names else None,
+                 skip_pre_tool_call_hook=True,
+                 skip_tool_request_middleware=True,
+diff --git a/hermes_cli/hooks.py b/hermes_cli/hooks.py
+index da7b1e9ec5..386f497951 100644
+--- a/hermes_cli/hooks.py
++++ b/hermes_cli/hooks.py
+@@ -103,11 +103,12 @@ _DEFAULT_PAYLOADS = {
+     "pre_tool_call": {
+         "tool_name": "terminal", "args": {"command": "echo hello"},
+         "session_id": "test-session", "task_id": "test-task", "tool_call_id": "test-call",
++        "platform": "cli",
+     },
+     "post_tool_call": {
+         "tool_name": "terminal", "args": {"command": "echo hello"},
+         "session_id": "test-session", "task_id": "test-task", "tool_call_id": "test-call",
+-        "result": '{"output": "hello"}', "duration_ms": 42,
++        "result": '{"output": "hello"}', "duration_ms": 42, "platform": "cli",
+     },
+     "pre_llm_call": {
+         "session_id": "test-session", "user_message": "What is the weather?",
+diff --git a/hermes_cli/plugins.py b/hermes_cli/plugins.py
+index 0e5f3b1601..4e01951ed8 100644
+--- a/hermes_cli/plugins.py
++++ b/hermes_cli/plugins.py
+@@ -1979,7 +1979,7 @@ def clear_thread_tool_whitelist() -> None:
+ def _get_pre_tool_call_directive_details(
+     tool_name: str, args: Optional[dict[str, Any]], task_id: str = "", session_id: str = "",
+     tool_call_id: str = "", turn_id: str = "", api_request_id: str = "",
+-    middleware_trace: Optional[list[dict[str, Any]]] = None,
++    middleware_trace: Optional[list[dict[str, Any]]] = None, platform: str = "",
+ ) -> _PreToolCallDirective:
+     """Check ``pre_tool_call`` hooks for ``{"action": "block", "message"}`` (veto; message becomes
+     the tool result) or ``{"action": "approve", "message", "rule_key"?}`` (escalate ANY tool to the
+@@ -1995,7 +1995,7 @@ def _get_pre_tool_call_directive_details(
+     hook_results = invoke_lifecycle_hook(
+         "pre_tool_call", tool_name=tool_name, args=args if isinstance(args, dict) else {},
+         task_id=task_id, session_id=session_id, tool_call_id=tool_call_id, turn_id=turn_id,
+-        api_request_id=api_request_id, middleware_trace=list(middleware_trace or []),
++        api_request_id=api_request_id, platform=platform, middleware_trace=list(middleware_trace or []),
+     )
+     modified_args: Optional[dict[str, Any]] = None
+     first_approve: Optional[tuple[Optional[str], Optional[str]]] = None  # (message, rule_key)
+diff --git a/model_tools.py b/model_tools.py
+index 011d32dc90..1920a906e3 100644
+--- a/model_tools.py
++++ b/model_tools.py
+@@ -647,6 +647,7 @@ class _CallIds:
+     tool_call_id: Optional[str] = None
+     turn_id: Optional[str] = None
+     api_request_id: Optional[str] = None
++    platform: Optional[str] = None
+ 
+     def hook_kwargs(self) -> dict[str, str]:
+         """Same fields with None -> "" (hook/middleware wire contract)."""
+@@ -674,9 +675,9 @@ def _tool_result_observer_fields(tool_name: str, result: Any) -> tuple[str, Opti
+ def _emit_post_tool_call_hook(
+     *, function_name: str, function_args: dict[str, Any], result: Any,
+     task_id: Optional[str] = None, session_id: Optional[str] = None, tool_call_id: Optional[str] = None,
+-    turn_id: Optional[str] = None, api_request_id: Optional[str] = None, duration_ms: int = 0,
+-    status: Optional[str] = None, error_type: Optional[str] = None, error_message: Optional[str] = None,
+-    middleware_trace: Optional[list[dict[str, Any]]] = None,
++    turn_id: Optional[str] = None, api_request_id: Optional[str] = None, platform: Optional[str] = None,
++    duration_ms: int = 0, status: Optional[str] = None, error_type: Optional[str] = None,
++    error_message: Optional[str] = None, middleware_trace: Optional[list[dict[str, Any]]] = None,
+ ) -> None:
+     """Emit the ``post_tool_call`` observer hook; gated on has_hook, and ok/error
+     fields are derived from the result only past that gate when status is None."""
+@@ -690,7 +691,7 @@ def _emit_post_tool_call_hook(
+             status, error_type, error_message = _tool_result_observer_fields(function_name, result)
+         invoke_hook(
+             "post_tool_call", tool_name=function_name, args=function_args, result=result,
+-            **_CallIds(task_id, session_id, tool_call_id, turn_id, api_request_id).hook_kwargs(),
++            **_CallIds(task_id, session_id, tool_call_id, turn_id, api_request_id, platform).hook_kwargs(),
+             duration_ms=duration_ms, status=status, error_type=error_type, error_message=error_message,
+             middleware_trace=list(middleware_trace or []),
+         )
+@@ -873,10 +874,12 @@ def _elapsed_ms(start: float) -> int:
+ def handle_function_call(
+     function_name: str, function_args: dict[str, Any], task_id: Optional[str] = None,
+     tool_call_id: Optional[str] = None, session_id: Optional[str] = None, turn_id: Optional[str] = None,
+-    api_request_id: Optional[str] = None, user_task: Optional[str] = None, enabled_tools: Optional[list[str]] = None,
++    api_request_id: Optional[str] = None,
++    user_task: Optional[str] = None, enabled_tools: Optional[list[str]] = None,
+     skip_pre_tool_call_hook: bool = False, skip_tool_request_middleware: bool = False,
+     skip_tool_execution_middleware: bool = False, tool_request_middleware_trace: Optional[list[dict[str, Any]]] = None,
+     enabled_toolsets: Optional[list[str]] = None, disabled_toolsets: Optional[list[str]] = None,
++    platform: Optional[str] = None,
+ ) -> str:
+     """Route a tool call through hooks/middleware to the registry; returns a JSON string.
+ 
+@@ -891,7 +894,7 @@ def handle_function_call(
+         function_args = {}
+     trace = list(tool_request_middleware_trace or [])
+     function_name = _LEGACY_TOOL_ALIASES.get(function_name, function_name)
+-    ids = _CallIds(task_id, session_id, tool_call_id, turn_id, api_request_id)
++    ids = _CallIds(task_id, session_id, tool_call_id, turn_id, api_request_id, platform)
+     start = time.monotonic()
+ 
+     def _emit(result: Any, **extra: Any) -> Any:
+diff --git a/tests/agent/test_tool_hook_platform.py b/tests/agent/test_tool_hook_platform.py
+new file mode 100644
+index 0000000000..8932798a23
+--- /dev/null
++++ b/tests/agent/test_tool_hook_platform.py
+@@ -0,0 +1,90 @@
++"""Tool-path hooks carry ``platform`` — the same value ``pre_llm_call`` already gets.
++
++Contract under test: a plugin that gates tool calls can tell an attended turn from an
++unattended one (``cron`` / ``subagent`` / ``curator``) without guessing from session ids.
++Covers all three tool hooks (pre/post/transform) plus the shell-hook ``extra`` dict.
++"""
++
++from types import SimpleNamespace
++
++from agent.inline_tool_executors import tool_hook_ids
++from model_tools import _CallIds, _apply_transform_tool_result_hook, _emit_post_tool_call_hook
++
++
++def _agent(platform="cron"):
++    return SimpleNamespace(
++        platform=platform,
++        session_id="sess-1",
++        _current_turn_id="turn-1",
++        _current_api_request_id="api-1",
++    )
++
++
++def test_tool_hook_ids_carries_agent_platform():
++    ids = tool_hook_ids(_agent("cron"), "task-1", "call-1")
++    assert ids["platform"] == "cron"
++    # Unknown platform (older agent object, programmatic caller) coerces to "" like the other ids.
++    assert tool_hook_ids(SimpleNamespace(), "t", "c")["platform"] == ""
++
++
++def test_call_ids_round_trips_platform_into_hook_kwargs():
++    ids = _CallIds(**tool_hook_ids(_agent("subagent"), "task-1", "call-1"))
++    assert ids.hook_kwargs()["platform"] == "subagent"
++
++
++def test_pre_tool_call_hook_receives_platform(monkeypatch):
++    from hermes_cli import lifecycle
++    from hermes_cli.plugins import _dispatch_pre_tool_call_hooks
++
++    seen = {}
++
++    def fake_invoke_hook(hook_name, **kwargs):
++        seen.update(kwargs)
++        return []
++
++    monkeypatch.setattr(lifecycle, "invoke_hook", fake_invoke_hook)
++    _dispatch_pre_tool_call_hooks("terminal", {"command": "echo hi"}, task_id="t", platform="cron")
++    assert seen["platform"] == "cron"
++
++
++def test_post_tool_call_hook_receives_platform(monkeypatch):
++    from hermes_cli import lifecycle
++
++    seen = {}
++
++    def fake_invoke_hook(hook_name, **kwargs):
++        seen.update(kwargs)
++        return []
++
++    monkeypatch.setattr(lifecycle, "has_hook", lambda _name: True)
++    monkeypatch.setattr(lifecycle, "invoke_hook", fake_invoke_hook)
++    _emit_post_tool_call_hook(function_name="terminal", function_args={}, result="ok",
++                              platform="curator")
++    assert seen["platform"] == "curator"
++
++
++def test_transform_tool_result_hook_receives_platform(monkeypatch):
++    from hermes_cli import lifecycle
++
++    seen = {}
++
++    def fake_invoke_hook(hook_name, **kwargs):
++        seen.update(kwargs)
++        return ["rewritten"]
++
++    monkeypatch.setattr(lifecycle, "has_hook", lambda _name: True)
++    monkeypatch.setattr(lifecycle, "invoke_hook", fake_invoke_hook)
++    out = _apply_transform_tool_result_hook(
++        "terminal", {}, "raw", 1, _CallIds(**tool_hook_ids(_agent("cron"), "t", "c")))
++    assert out == "rewritten"
++    assert seen["platform"] == "cron"
++
++
++def test_shell_hook_payload_carries_tool_hook_identity_in_extra():
++    """Shell hooks: identity fields the payload does not promote land in ``extra``."""
++    from agent.shell_hooks import _payload_fields
++
++    payload = _payload_fields({"tool_name": "terminal", "args": {},
++                               **tool_hook_ids(_agent("cron"), "task-1", "call-1")})
++    assert "platform" not in payload
++    assert payload["extra"]["platform"] == "cron"
+diff --git a/tests/cron/test_cron_tool_hook_platform.py b/tests/cron/test_cron_tool_hook_platform.py
+new file mode 100644
+index 0000000000..5fa14b034e
+--- /dev/null
++++ b/tests/cron/test_cron_tool_hook_platform.py
+@@ -0,0 +1,68 @@
++"""A tool hook fired inside a scheduled job sees ``platform == "cron"`` end to end.
++
++The same field ``pre_llm_call`` already receives; without it a policy plugin cannot tell an
++unattended cron run from an attended turn and has to fail closed on both.
++"""
++import json
++import os
++import subprocess
++import sys
++from datetime import timedelta
++from pathlib import Path
++
++from tests.fakes.fake_llm_provider import FakeLLMServer, Text, ToolCall, write_hermes_home
++
++_PLUGIN = '''
++import json, os
++from pathlib import Path
++
++def _record(**kwargs):
++    out = Path(os.environ["HERMES_HOME"]) / "seen.json"
++    out.write_text(json.dumps({"tool": kwargs.get("tool_name"),
++                               "platform": kwargs.get("platform")}))
++
++def register(ctx):
++    ctx.register_hook("pre_tool_call", _record)
++'''
++
++_TICK = '''
++import json
++from cron import scheduler, scheduler_authority
++from tests.cron.conftest import owner_execution_runner
++scheduler_authority.run_canonical_job = owner_execution_runner()
++scheduler.tick(verbose=False, sync=True)
++print(json.dumps({"ok": True}))
++'''
++
++
++def test_tool_hook_in_a_ticked_job_sees_platform_cron(tmp_path):
++    from hermes_time import now
++
++    home = tmp_path / "home"
++    plugin_dir = home / "plugins" / "cron-platform-probe"
++    plugin_dir.mkdir(parents=True)
++    (plugin_dir / "plugin.yaml").write_text("name: cron-platform-probe\nversion: 0.0.1\n")
++    (plugin_dir / "__init__.py").write_text(_PLUGIN)
++    note = home / "note.txt"
++    with FakeLLMServer([ToolCall("read_file", {"path": str(note)}), Text("done")]) as srv:
++        write_hermes_home(home, srv.base_url,
++                          extra_config="plugins:\n  enabled: [cron-platform-probe]\n")
++        note.write_text("hello\n")
++        (home / "cron").mkdir()
++        (home / "cron" / "jobs.json").write_text(json.dumps({"jobs": [{
++            "id": "platform-probe", "name": "platform probe", "prompt": "read the note",
++            "schedule": {"kind": "interval", "minutes": 240},
++            "next_run_at": (now() - timedelta(minutes=1)).isoformat(),
++            "enabled": True, "state": "scheduled", "deliver": "local",
++            "repeat": {"times": None, "completed": 0}}]}))
++        env = {k: v for k, v in os.environ.items()
++               if not k.startswith(("HERMES_", "_HERMES_"))
++               and not k.endswith(("_API_KEY", "_TOKEN"))}
++        env.update(HERMES_HOME=str(home), PYTHONPATH=str(Path(__file__).resolve().parents[2]))
++        result = subprocess.run([sys.executable, "-c", _TICK], env=env, stdin=subprocess.DEVNULL,
++                                capture_output=True, text=True, timeout=180, check=False)
++    assert result.returncode == 0, result.stdout + result.stderr
++    seen = json.loads((home / "seen.json").read_text())
++
++    assert seen["tool"] == "read_file"
++    assert seen["platform"] == "cron"
+diff --git a/website/docs/user-guide/features/hooks.md b/website/docs/user-guide/features/hooks.md
+index 71209c0337..f30a6006e7 100644
+--- a/website/docs/user-guide/features/hooks.md
++++ b/website/docs/user-guide/features/hooks.md
+@@ -448,9 +448,9 @@ Payload fields below are the exact event-specific fields supplied by each call s
+ 
+ | Hook | Category | Exact timing and return behavior | Explicit payload fields | Privacy / sensitivity |
+ |---|---|---|---|---|
+-| [`pre_tool_call`](#pre_tool_call) | Directive/control | Once before execution; any valid `block` wins over any `approve` (then the first valid `approve`), and `modify` returns are shallow-merged into the tool arguments. | `tool_name`, `args`, `task_id`, `session_id`, `tool_call_id`, `turn_id`, `api_request_id`, `middleware_trace` | Raw arguments may contain user content, paths, commands, or secrets. |
+-| `post_tool_call` | Observer | After blocked, error, or successful result; return ignored. | `tool_name`, `args`, `result`, `task_id`, `session_id`, `tool_call_id`, `turn_id`, `api_request_id`, `duration_ms`, `status`, `error_type`, `error_message`, `middleware_trace` | Result/error text may contain arbitrary tool or user content and secrets. |
+-| `transform_tool_result` | Transform | After `post_tool_call`, before conversation append; first string replaces the result. | `tool_name`, `args`, `result`, `task_id`, `session_id`, `tool_call_id`, `turn_id`, `api_request_id`, `duration_ms`, `status`, `error_type`, `error_message` | Exposes the full model-bound result and arguments. |
++| [`pre_tool_call`](#pre_tool_call) | Directive/control | Once before execution; any valid `block` wins over any `approve` (then the first valid `approve`), and `modify` returns are shallow-merged into the tool arguments. | `tool_name`, `args`, `task_id`, `session_id`, `tool_call_id`, `turn_id`, `api_request_id`, `platform`, `middleware_trace` | Raw arguments may contain user content, paths, commands, or secrets. |
++| `post_tool_call` | Observer | After blocked, error, or successful result; return ignored. | `tool_name`, `args`, `result`, `task_id`, `session_id`, `tool_call_id`, `turn_id`, `api_request_id`, `platform`, `duration_ms`, `status`, `error_type`, `error_message`, `middleware_trace` | Result/error text may contain arbitrary tool or user content and secrets. |
++| `transform_tool_result` | Transform | After `post_tool_call`, before conversation append; first string replaces the result. | `tool_name`, `args`, `result`, `task_id`, `session_id`, `tool_call_id`, `turn_id`, `api_request_id`, `platform`, `duration_ms`, `status`, `error_type`, `error_message` | Exposes the full model-bound result and arguments. |
+ | `transform_terminal_output` | Transform | After bounded foreground process capture, before final output limiting; first string replaces output. | `command`, `output`, `returncode`, `task_id`, `env_type` | Command/output may contain credentials. |
+ | `pre_transcription` | Transform | Fired by the STT dispatcher after provider resolution and before any backend (built-in, command-type, or plugin-registered) is invoked; dict results are applied in registration order, last-writer-wins per field (`prompt`, `language`, `model`; `file_path` is read-only). | `file_path`, `provider`, `model`, `language`, `prompt`, `source` | The final prompt is uploaded to the configured STT provider with the audio — keep secrets out of hook returns. |
+ | `pre_llm_call` | Directive/control | Once per turn before the loop; all valid string/`{"context": ...}` returns are joined and injected into the user message. | `session_id`, `task_id`, `turn_id`, `user_message`, `conversation_history`, `is_first_turn`, `model`, `platform`, `parent_session_id`, `sender_id` | Full user message and conversation history. |
+@@ -560,6 +560,7 @@ def my_callback(tool_name: str, args: dict, task_id: str, **kwargs):
+ | `tool_name` | `str` | Name of the tool about to execute (e.g. `"terminal"`, `"web_search"`, `"read_file"`) |
+ | `args` | `dict` | The arguments the model passed to the tool |
+ | `task_id` | `str` | Session/task identifier. Empty string if not set. |
++| `platform` | `str` | Channel this turn belongs to — the same value `pre_llm_call` receives (`"cli"`, `"desktop"`, `"telegram"`, `"cron"`, `"subagent"`, `"curator"`, ...). Empty string outside a platform-bound turn. |
+ 
+ **Fires:** In `model_tools.py`, inside `handle_function_call()`, before the tool's handler runs. Fires once per tool call — if the model calls 3 tools in parallel, this fires 3 times.
+ 
+diff --git a/website/i18n/zh-Hans/docusaurus-plugin-content-docs/current/user-guide/features/hooks.md b/website/i18n/zh-Hans/docusaurus-plugin-content-docs/current/user-guide/features/hooks.md
+index ff4fbd8ca2..31c18648ea 100644
+--- a/website/i18n/zh-Hans/docusaurus-plugin-content-docs/current/user-guide/features/hooks.md
++++ b/website/i18n/zh-Hans/docusaurus-plugin-content-docs/current/user-guide/features/hooks.md
+@@ -378,9 +378,9 @@ def register(ctx):
+ 
+ | Hook | 类别 | 精确时机与返回行为 | 显式 payload 字段 | 隐私/敏感性 |
+ |---|---|---|---|---|
+-| `pre_tool_call` | 指令/控制 | 执行前一次；第一个有效 `block` 或 `approve` 指令生效。 | `tool_name`, `args`, `task_id`, `session_id`, `tool_call_id`, `turn_id`, `api_request_id`, `middleware_trace` | 原始参数可能含用户内容、路径、命令或 secret。 |
+-| `post_tool_call` | 观察者 | 阻断、错误或成功结果产生后；忽略返回值。 | `tool_name`, `args`, `result`, `task_id`, `session_id`, `tool_call_id`, `turn_id`, `api_request_id`, `duration_ms`, `status`, `error_type`, `error_message`, `middleware_trace` | 结果/错误文本可能含任意工具或用户内容及 secret。 |
+-| `transform_tool_result` | Transform | `post_tool_call` 后、写入会话前；第一个字符串替换结果。 | `tool_name`, `args`, `result`, `task_id`, `session_id`, `tool_call_id`, `turn_id`, `api_request_id`, `duration_ms`, `status`, `error_type`, `error_message` | 暴露完整的 model-bound 结果和参数。 |
++| `pre_tool_call` | 指令/控制 | 执行前一次；第一个有效 `block` 或 `approve` 指令生效。 | `tool_name`, `args`, `task_id`, `session_id`, `tool_call_id`, `turn_id`, `api_request_id`, `platform`, `middleware_trace` | 原始参数可能含用户内容、路径、命令或 secret。 |
++| `post_tool_call` | 观察者 | 阻断、错误或成功结果产生后；忽略返回值。 | `tool_name`, `args`, `result`, `task_id`, `session_id`, `tool_call_id`, `turn_id`, `api_request_id`, `platform`, `duration_ms`, `status`, `error_type`, `error_message`, `middleware_trace` | 结果/错误文本可能含任意工具或用户内容及 secret。 |
++| `transform_tool_result` | Transform | `post_tool_call` 后、写入会话前；第一个字符串替换结果。 | `tool_name`, `args`, `result`, `task_id`, `session_id`, `tool_call_id`, `turn_id`, `api_request_id`, `platform`, `duration_ms`, `status`, `error_type`, `error_message` | 暴露完整的 model-bound 结果和参数。 |
+ | `transform_terminal_output` | Transform | 前台进程输出完成有界捕获后、最终 output limit 前；第一个字符串替换输出。 | `command`, `output`, `returncode`, `task_id`, `env_type` | 命令/输出可能含凭据。 |
+ | `pre_llm_call` | 指令/控制 | 每轮 loop 前一次；所有有效字符串或 `{"context": ...}` 会拼接并注入用户消息。 | `session_id`, `task_id`, `turn_id`, `user_message`, `conversation_history`, `is_first_turn`, `model`, `platform`, `parent_session_id`, `sender_id` | 完整用户消息和会话历史。 |
+ | `post_llm_call` | 观察者 | 成功且未中断的轮次 finalize 时；忽略返回值。 | `session_id`, `task_id`, `turn_id`, `user_message`, `assistant_response`, `conversation_history`, `model`, `platform` | 完整 prompt、response 和 history。 |
+@@ -421,6 +421,7 @@ def my_callback(tool_name: str, args: dict, task_id: str, **kwargs):
+ | `tool_name` | `str` | 即将执行的工具名称（如 `"terminal"`、`"web_search"`、`"read_file"`） |
+ | `args` | `dict` | 模型传递给工具的参数 |
+ | `task_id` | `str` | 会话/任务标识符。未设置时为空字符串。 |
++| `platform` | `str` | 本轮所属通道——与 `pre_llm_call` 收到的值相同（`"cli"`、`"desktop"`、`"telegram"`、`"cron"`、`"subagent"`、`"curator"` 等）。不在平台轮次内时为空字符串。 |
+ 
+ **触发位置：** `model_tools.py` 中的 `handle_function_call()` 内，工具处理器运行前。每次工具调用触发一次——若模型并行调用 3 个工具，则触发 3 次。
+ 
+-- 
+2.53.0.windows.3
+

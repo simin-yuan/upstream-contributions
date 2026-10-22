@@ -1,0 +1,75 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+____ TestPluginDiscovery.test_enabled_portable_plugin_registers_components ____
+
+self = <tests.hermes_cli.test_plugins.TestPluginDiscovery object at 0x00000258F1313ED0>
+tmp_path = WindowsPath('<tmp>/pytest-of-<user>/pytest-271/test_enabled_portable_plugin_r0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000258F13E9A70>
+
+    def test_enabled_portable_plugin_registers_components(
+        self, tmp_path, monkeypatch
+    ):
+        from hermes_cli.agent_plugins import MCP_SCHEMA_V1, PLUGIN_SCHEMA_V1
+        from hermes_cli import plugins as plugins_mod
+    
+        home = tmp_path / "home"
+        plugin = home / "plugins" / "portable"
+        skill = plugin / "skills" / "summarize"
+        skill.mkdir(parents=True)
+        app = tmp_path / "example-app"
+        app.write_text("", encoding="utf-8")
+        (plugin / "plugin.json").write_text(
+            json.dumps({
+                "$schema": PLUGIN_SCHEMA_V1,
+                "name": "portable.test",
+                "extensions": {"com.nousresearch.hermes": {"servers": {"worker": {
+                    "app": {"darwin": {"presence": "executable", "location": str(app)}},
+                    "requires": {"app": True},
+                    "liveness": {"kind": "static"},
+                }}}},
+            })
+        )
+        (skill / "SKILL.md").write_text(
+            "---\nname: summarize\ndescription: Summarize reports.\n---\nBody.\n"
+        )
+        (plugin / "mcp.json").write_text(
+            json.dumps(
+                {
+                    "$schema": MCP_SCHEMA_V1,
+                    "mcpServers": {
+                        "worker": {"type": "stdio", "command": "python"}
+                    },
+                }
+            )
+        )
+        native = home / "plugins" / "native"
+        native.mkdir()
+        (native / "plugin.yaml").write_text(
+            yaml.safe_dump({"name": "native", "version": "1.0.0"})
+        )
+        (native / "__init__.py").write_text("def register(ctx):\n    pass\n", encoding="utf-8")
+        home.mkdir(exist_ok=True)
+        (home / "config.yaml").write_text(
+            yaml.safe_dump({"plugins": {"enabled": ["portable.test", "native"]}})
+        )
+        empty_bundled = tmp_path / "bundled"
+        empty_bundled.mkdir()
+        monkeypatch.setenv("HOME", str(tmp_path / "os-home"))
+        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setattr(plugins_mod, "get_bundled_plugins_dir", lambda: empty_bundled)
+    
+        manager = PluginManager()
+        manager.discover_and_load()
+    
+>       [qualified] = manager.list_plugin_skill_metadata()
+        ^^^^^^^^^^^
+E       ValueError: not enough values to unpack (expected 1, got 0)
+
+tests\hermes_cli\test_plugins.py:212: ValueError
+------------------------------ Captured log call ------------------------------
+INFO     hermes_cli.plugin_capabilities:plugin_capabilities.py:144 capability_check plugin=native capability=tools.override decision=deny checked_by=plugin_capability_granted evidence=not granted
+WARNING  hermes_cli.plugins:plugins_loader.py:697 Agent Plugin 'portable.test' disabled: plugin.json extension server 'worker': app.darwin.location must be absolute or start with ~ / %VAR% / $VAR, without '..', '**' or a URL scheme
+INFO     hermes_cli.plugins:plugins.py:1428 Plugin discovery complete: 2 found, 1 enabled
+=========================== short test summary info ===========================
+FAILED tests/hermes_cli/test_plugins.py::TestPluginDiscovery::test_enabled_portable_plugin_registers_components
+1 failed, 86 deselected in 3.55s

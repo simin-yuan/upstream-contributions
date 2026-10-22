@@ -1,0 +1,15 @@
+Discovered 2 test files (~7 tests) under ['tests\\agent\\test_tool_hook_platform.py', 'tests\\cron\\test_cron_tool_hook_platform.py']; running with -j 12
+[ 85.7% |     6/~7 | ✓6 | ✗0] ✓ tests\agent\test_tool_hook_platform.py (6✓, 5.5s)
+[100.0% |     7/~7 | ✓7 | ✗0] ✓ tests\cron\test_cron_tool_hook_platform.py (1✓, 15.4s)
+
+=== Summary: 2 files, 7 tests passed, 0 failed (100% complete) in 16.5s (12 workers) ===
+  Durations cached to test_durations.json (2 files)
+
+=== Per-file subprocess time distribution ===
+  Files:   2
+  Total subprocess CPU-wall: 20.9s  (runner wall: 16.5s, parallelism: 12x)
+  P50: 15.39s  P90: 15.39s  P95: 15.39s  P99: 15.39s  Max: 15.39s
+  <1s: 0 files (0%)  <2s: 0 files (0%)
+  Top 10 slowest:
+     15.39s  tests\cron\test_cron_tool_hook_platform.py
+      5.52s  tests\agent\test_tool_hook_platform.py
