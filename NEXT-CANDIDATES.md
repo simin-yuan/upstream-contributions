@@ -1,7 +1,8 @@
 # Next candidates
 
-Things learned from this record that are worth doing next. Nothing here has been started; each
-entry is a candidate with its origin, its cheapest first step, and what it is waiting on.
+Things learned from this record that are worth doing next. Each entry carries its origin, its
+cheapest first step and what it is waiting on; the first one now has a built, unpublished branch,
+noted under its own heading.
 
 ## 1. Three stages, three defaults: record → judge → settle
 
@@ -34,7 +35,19 @@ otherwise leave it empty.
 **Constraint that decides the design.** Whatever appends a resolution must not be the agent that
 wrote the claim, or the condition is graded by its author. In practice that means the user or CI.
 
-**Waiting on.** The platform PR closing. No new line opens before that.
+**Waiting on.** Nothing but the reply. The branch below is built; publishing it — a release, an
+install note, a word in the thread — still waits, so the wording can credit u/Feeling_Sun_6436.
+
+**State (2026-10-23).** Branch `feat/settle-a-stored-condition` in `hermes-provenance-gate`, commit
+`c4007db`, local only: no PR, no release, nothing said publicly. Built during the wait so that the
+answer to a reply can be "it is done" instead of "we will". What exists: `settlement.py`
+(append-only `settlements.jsonl`; a claim id derived from session, target, claim and quote, so it
+survives a prune; only `user` or `ci` may settle; the session that wrote the claim cannot settle its
+own; a revision must be a real git sha or be absent), `repos.py` (pin `HEAD` only when the session
+touched exactly one repository — none, two, or an unreadable `HEAD` give an empty string on purpose),
+`pending` and `settle` commands, and 18 tests. The verdict is untouched: the six relayed/conditional
+holes still `xfail` deliberately, because blocking a relayed claim is a false-block risk rather than
+a missing check.
 
 ## 2. A public corpus of memory-write claims
 
