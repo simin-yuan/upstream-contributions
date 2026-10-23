@@ -135,10 +135,12 @@ test per process, in the fixed tree:
   install conflict: the file drives the live Hermes checkout on this machine, so it belongs to CI and
   should not be run here.
 
-The earlier "the batch never finishes" has the same origin: a 60 s timeout killed the fixture
-mid-preparation and the grandchildren outlived it (five orphaned worker processes, killed; the live
-runtime was checked afterwards — `.hermes-runtime/python` still dated 10-01, no package directory
-touched).
+The earlier "the batch never finishes" is the same thing seen from outside: the worker loops in
+dependency preparation and prints nothing, so the batch looks hung; the fixture's own `timeout=300`
+(line 31) eventually raises `TimeoutExpired`, which means each of the 24 tests costs five minutes and
+the file only "finishes" after two hours. Killing my shell instead of waiting left orphaned workers
+behind (five, killed). The live runtime was checked afterwards — `.hermes-runtime/python` still dated
+10-01, no package directory touched, checkout HEAD unchanged.
 
 Neither file is touched by the change (the diff above lists every file). What the regex change
 actually touches is covered by the runs that do finish: `tests/test_performance.py` **19 passed**
