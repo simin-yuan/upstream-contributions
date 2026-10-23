@@ -61,3 +61,7 @@ Appended later:
   2026-10-23T16:08:21Z): what was asked, the two commits that answered it, the measurements, the
   output differences, and the audit of the two sibling plugins
 - `review-2026-10-23.json` — the review payload as returned by the API
+- `review-2026-10-23-round2.md` — the second round: the Python floor, the real cause of the red
+  job, the email prefix fix, hostile timings for all eight patterns, and why two test files cannot
+  run on this desktop (a Windows junction that never completes, identical either side of the change)
+- `comment-draft-2026-10-23-round2.md` — the reply as it would be posted; held, not posted
