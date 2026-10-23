@@ -118,20 +118,19 @@ CHANGELOG.md   plugin.yaml   provenance_gate/__init__.py (version)
 provenance_gate/claims.py  +11/-2        tests/test_performance.py  +47
 ```
 
-Against that parent the two files behave identically — but not for the reason I first wrote. Run one
-test per process, in the fixed tree:
+Against that parent the two files behave identically — but not for the reason I first wrote. Measured
+on a quiet machine, one suite at a time:
 
-- `tests/test_e2e_hermes.py`: **40/40 pass**, 8-14 s each (`test_8_non_claim_writes_pass_untouched`
-  10.59 s in one run, 13.88 s in another). So this file is not blocked at all. The junction call is
-  what makes it *flaky* here: the same `mklink` fails intermittently under load — my standalone probe
-  into a fresh temp dir hung past 20 s, and two direct runs of `test_8` ended in
-  `CalledProcessError: … returned non-zero exit status 1` (62.97 s pre-fix, 157.83 s post-fix).
-  Intermittent, not broken.
+- `tests/test_e2e_hermes.py`: **40 passed in 299.87 s** as a whole file in one process, and 40/40 when
+  run one test per process (8-14 s each). It runs. The earlier failures — `mklink` hanging past 60 s,
+  `test_8` failing with `CalledProcessError` — happened while three suites plus the benchmarks were
+  running at once; the hang traceback sits in `communicate()`, waiting for a stdout EOF that a
+  contended machine does not deliver. So the junction is fine, my own load was the problem.
 - `tests/test_hermes_strings.py`: the `built` fixture spawns `tests/hermes_strings_worker.py`, which
   asks Hermes to prepare an isolated runtime and gets stuck in dependency preparation —
   `preparing dependencies for this data root (the checkout's updates belong to
   C:\Users\Simon\AppData\Local\hermes)` → `Installing Python dependencies`, five full cycles in
-  330 s, never reaching the first test. That is the real blocker, and it is a harness-versus-live-
+  330 s, never reaching the first test. This one is a real blocker, and it is a harness-versus-live-
   install conflict: the file drives the live Hermes checkout on this machine, so it belongs to CI and
   should not be run here.
 
@@ -148,9 +147,10 @@ actually touches is covered by the runs that do finish: `tests/test_performance.
 174/174**, and the 3.11 run of everything else **732 passed, 3 skipped, 6 xfailed**. GitHub CI on
 0.1.1 is green.
 
-So the honest position for the re-pin: `test_hermes_strings.py` cannot run on this desktop (it starts
-a dependency install against the live install), `test_e2e_hermes.py` passes when it runs and is flaky
-when the machine is busy — before and after the change alike. On CI both run and CI is green.
+So the honest position for the re-pin: `tests/test_e2e_hermes.py` passes here — the whole file, 40
+passed in 299.87 s — and `tests/test_hermes_strings.py` cannot run here because it starts a dependency
+install against the live install. Neither outcome depends on the change. On CI both run, and CI is
+green.
 
 ## Re-pin prepared, not opened
 
