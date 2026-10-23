@@ -118,8 +118,10 @@ CHANGELOG.md   plugin.yaml   provenance_gate/__init__.py (version)
 provenance_gate/claims.py  +11/-2        tests/test_performance.py  +47
 ```
 
-Against that parent the two files behave identically — but not for the reason I first wrote. Measured
-on a quiet machine, one suite at a time:
+Against that parent the two files behave identically — but not for the reason I first wrote. The clean
+measurement below is on the fixed tree; the parent was only ever run under the same contention, and
+it failed in exactly the same place (`test_8`, `mklink`, 62.97 s), so the comparison is "same under
+load", not "both measured quiet":
 
 - `tests/test_e2e_hermes.py`: **40 passed in 299.87 s** as a whole file in one process, and 40/40 when
   run one test per process (8-14 s each). It runs. The earlier failures — `mklink` hanging past 60 s,
