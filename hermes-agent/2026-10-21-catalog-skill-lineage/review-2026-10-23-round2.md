@@ -73,17 +73,26 @@ run-to-run noise).
 ## P1-4 — hostile input for all eight patterns
 
 21 shapes, three per pattern, built from each pattern's own structure; each measured at 0.25, 0.5
-and 1 MB in a fresh interpreter with a hard timeout. Nothing is super-linear: the 4x size step
-grows time by x2.4–x5.6. The slowest shape is `_COMMAND` on repeated `"$( "` — 0.469 s at 1 MB in
-the 21-shape matrix, and x4.2 for x4 data in a separate growth run:
+and 1 MB in a fresh interpreter with a hard timeout. Nothing blows up: the largest single
+measurement is `_COMMAND` on repeated `"$( "` at 0.469 s for 1 MB, and `_COMMAND` on backticks at
+0.413 s.
 
-| size | time |
-|---|---|
-| 1.0 MB | 0.419 s |
-| 2.1 MB | 0.849 s |
-| 4.2 MB | 1.756 s |
+The growth ratios in the first single-shot pass were taken while two other suites were running, and
+one of them looked super-linear — `_PATH` on repeated `"./"` read x7.6 for x4 data. Re-measured on an
+idle machine, best of three:
 
-`_EMAIL` is no longer expensive: 0.003/0.007/0.015 s for `"a."` at 0.25/0.5/1 MB. The 2 MB
+| size | time | step |
+|---|---|---|
+| 0.25 MB | 0.0145 s | |
+| 0.5 MB | 0.0324 s | x2.23 |
+| 1.0 MB | 0.0593 s | x1.83 |
+
+That is linear (x4.08 for x4 data); the x7.6 was contention, not the pattern. It is worth saying
+plainly because at 0.02 s scale the ratios are noise: the regression test therefore asserts two
+things — the 1 MB case under 2.0 s, and a 4x data step under 8x time, a bar that rejects quadratic
+blowup (x16) while leaving room for that noise.
+
+`_EMAIL` is no longer expensive either: 0.004/0.007/0.019 s for `"a."` at 0.25/0.5/1 MB. The 2 MB
 reproducer through `anchor_strings` stays at 0.63 s against the 5 s bar. All of it is in
 `tests/test_textfeat_perf.py` (43 tests, 16 s), each case in its own process.
 
