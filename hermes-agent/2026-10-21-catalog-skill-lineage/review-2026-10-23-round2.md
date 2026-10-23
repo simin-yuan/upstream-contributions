@@ -118,27 +118,37 @@ CHANGELOG.md   plugin.yaml   provenance_gate/__init__.py (version)
 provenance_gate/claims.py  +11/-2        tests/test_performance.py  +47
 ```
 
-Against that parent the two files behave identically, and both are blocked by the environment:
+Against that parent the two files behave identically — but not for the reason I first wrote. Run one
+test per process, in the fixed tree:
 
-- `tests/test_e2e_hermes.py:76` runs `subprocess.run(["cmd", "/c", "mklink", "/J", …])` to junction
-  the real installs directory into a temp home. On this desktop that call does not complete —
-  reproduced outside the repo, into a fresh temp dir, with a 20 s timeout: `TIMEOUT >20s`. Inside
-  the suite it returns exit 1 and the test fails.
-  `test_8_non_claim_writes_pass_untouched[plain]`, the first test that reaches the junction:
-  **pre-fix `1 failed in 62.97s`, post-fix `2 failed in 157.83s`** — same command, same
-  `CalledProcessError: … returned non-zero exit status 1`, only the duration differs.
-- `tests/test_hermes_strings.py` blocks in its `built` fixture: `subprocess.run([... ,
-  hermes_strings_worker.py])` never returns, and neither tree finishes it.
+- `tests/test_e2e_hermes.py`: **40/40 pass**, 8-14 s each (`test_8_non_claim_writes_pass_untouched`
+  10.59 s in one run, 13.88 s in another). So this file is not blocked at all. The junction call is
+  what makes it *flaky* here: the same `mklink` fails intermittently under load — my standalone probe
+  into a fresh temp dir hung past 20 s, and two direct runs of `test_8` ended in
+  `CalledProcessError: … returned non-zero exit status 1` (62.97 s pre-fix, 157.83 s post-fix).
+  Intermittent, not broken.
+- `tests/test_hermes_strings.py`: the `built` fixture spawns `tests/hermes_strings_worker.py`, which
+  asks Hermes to prepare an isolated runtime and gets stuck in dependency preparation —
+  `preparing dependencies for this data root (the checkout's updates belong to
+  C:\Users\Simon\AppData\Local\hermes)` → `Installing Python dependencies`, five full cycles in
+  330 s, never reaching the first test. That is the real blocker, and it is a harness-versus-live-
+  install conflict: the file drives the live Hermes checkout on this machine, so it belongs to CI and
+  should not be run here.
 
-Neither file is touched by the change (the diff above lists every file), and the failure text names
-the junction, not claim parsing. What the regex change actually touches is covered by the runs that
-do finish: `tests/test_performance.py` **19 passed** (four sub-process adversarial cases at a 20 s
-hard timeout), `tests/test_corpora.py` **213/213 and 174/174**, and the 3.11 run of everything else
-**732 passed, 3 skipped, 6 xfailed**. GitHub CI on 0.1.1 is green — that machine can create the
-junction, this one cannot.
+The earlier "the batch never finishes" has the same origin: a 60 s timeout killed the fixture
+mid-preparation and the grandchildren outlived it (five orphaned worker processes, killed; the live
+runtime was checked afterwards — `.hermes-runtime/python` still dated 10-01, no package directory
+touched).
 
-So the honest position for the re-pin: the two files cannot run on this desktop before or after the
-change, for a reason outside the plugin; on CI they run, and CI is green.
+Neither file is touched by the change (the diff above lists every file). What the regex change
+actually touches is covered by the runs that do finish: `tests/test_performance.py` **19 passed**
+(four sub-process adversarial cases at a 20 s hard timeout), `tests/test_corpora.py` **213/213 and
+174/174**, and the 3.11 run of everything else **732 passed, 3 skipped, 6 xfailed**. GitHub CI on
+0.1.1 is green.
+
+So the honest position for the re-pin: `test_hermes_strings.py` cannot run on this desktop (it starts
+a dependency install against the live install), `test_e2e_hermes.py` passes when it runs and is flaky
+when the machine is busy — before and after the change alike. On CI both run and CI is green.
 
 ## Re-pin prepared, not opened
 
