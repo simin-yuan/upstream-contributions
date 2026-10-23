@@ -54,3 +54,10 @@ is the body as filed.
 - `pr-files-142381.json` — the files payload at the same moment
 - `evidence.md` — validation, tests, the end-to-end run, and the rule-9 fix
 - `archive.md` — the Internet Archive capture and its read-back
+
+Appended later:
+
+- `review-2026-10-23.md` — the first review (`teknium1`, `CHANGES_REQUESTED`,
+  2026-10-23T16:08:21Z): what was asked, the two commits that answered it, the measurements, the
+  output differences, and the audit of the two sibling plugins
+- `review-2026-10-23.json` — the review payload as returned by the API
