@@ -64,8 +64,12 @@ from the match and drops the result if nothing is left, so `-name@example.com` r
 `name@example.com` as 0.1.4 did. Without that, an address next to a separator hashed one way in an
 older chain and another way now, and one address counted as two.
 
-Compared against the 0.1.4 pattern on 13 samples: **2 differ**, both a local part longer than 64
-octets (`prefix.` + 63 chars, and 65 chars), which is the one intended difference.
+Compared against 0.1.4 end to end — old pattern and old body (`match.group(0).lower()`, no strip)
+against the current `anchor_strings` — on 13 samples: **2 differ**, both a local part longer than 64
+octets (`prefix.` + 63 chars, and 70 chars), which is the one intended difference. The other 11 are
+identical, including `-name@example.com`: the bounded pattern on its own starts the match at the
+hyphen (`-name@example.com`), and the strip is what puts it back to `name@example.com`, which is what
+0.1.4 recorded. That is the whole reason the correction lives at the call site.
 
 Timing with the post-processing: `anchor_strings` on 2 MB of `"a."` = 0.631 s (0.664 s before it,
 run-to-run noise).
@@ -73,12 +77,26 @@ run-to-run noise).
 ## P1-4 — hostile input for all eight patterns
 
 21 shapes, three per pattern, built from each pattern's own structure; each measured at 0.25, 0.5
-and 1 MB in a fresh interpreter with a hard timeout. Nothing blows up: the largest single
-measurement is `_COMMAND` on repeated `"$( "` at 0.469 s for 1 MB, and `_COMMAND` on backticks at
-0.413 s.
+and 1 MB in a fresh interpreter with a hard timeout. Final pass, nothing else running — worst shape
+per pattern, 1 MB column:
 
-The growth ratios in the first single-shot pass were taken while two other suites were running, and
-one of them looked super-linear — `_PATH` on repeated `"./"` read x7.6 for x4 data. Re-measured on an
+| pattern | worst shape | 0.25 MB | 0.5 MB | 1 MB | step |
+|---|---|---|---|---|---|
+| `_EMAIL` | repeated `@` | 0.012 | 0.032 | 0.064 | x5.2 |
+| `_URL` | `http://` scheme | 0.002 | 0.002 | 0.006 | — |
+| `_PATH` | repeated `./` | 0.025 | 0.064 | 0.106 | x4.3 |
+| `_IP` | repeated quads | 0.011 | 0.027 | 0.036 | x3.1 |
+| `_ENV` | repeated `$VAR` | 0.010 | 0.020 | 0.052 | x5.1 |
+| `_INSTALL` | `$( ` | 0.008 | 0.011 | 0.026 | x3.1 |
+| `_COMMAND` | backticks | 0.113 | 0.200 | 0.414 | x3.7 |
+| `_WORD` | repeated `.` | 0.024 | 0.066 | 0.122 | x5.2 |
+
+Worst single measurement overall: `_COMMAND` on backticks, 0.414 s for 1 MB. Nothing reaches half a
+second, and every step is inside the x8-for-x4 bar the regression test asserts (the two x5.2 rows are
+0.06-0.12 s absolute, where the ratio is noise).
+
+The ratios in the first single-shot pass were taken while two other suites were running, and one of
+them looked super-linear — `_PATH` on repeated `"./"` read x7.6 for x4 data. Re-measured on an
 idle machine, best of three:
 
 | size | time | step |
@@ -153,6 +171,30 @@ So the honest position for the re-pin: `tests/test_e2e_hermes.py` passes here �
 passed in 299.87 s — and `tests/test_hermes_strings.py` cannot run here because it starts a dependency
 install against the live install. Neither outcome depends on the change. On CI both run, and CI is
 green.
+
+## The live install was not touched
+
+`tests/test_hermes_strings.py` starts a dependency install against the checkout this machine runs
+Hermes from, so after the overnight runs I checked that install directly:
+
+- `git -C hermes-agent log -1` → `bf0203a794 2026-10-22 19:24:27 -0700 fix(launchers): a Python repin
+  republishes hermes.exe, not a .cmd`; `rev-parse --abbrev-ref HEAD` → `HEAD` (detached, unchanged).
+  `git reflog` last entry `2026-10-23 14:51:25 checkout: moving from 4d043038… to bf0203a794` — the
+  last checkout predates the overnight work, so no branch was switched and no commit was added.
+- `git status --porcelain` → one line, `?? agent/loop_breaker_patch.py`, dated `2026-10-23 15:21`
+  (before the runs; not from this work).
+- The venv the gateway uses (`hermes-agent/venv`, 3.11.16) still imports `pydantic_core._pydantic_core`
+  and `ruamel.yaml`; **0 files** under `venv/` changed after `2026-10-24 00:00`, and
+  `venv/Lib/site-packages` is still dated 10-18.
+- `~/.hermes/installs/`: no new file. Two `.leases` directories show a later mtime (03:41, 04:44) —
+  lease markers created and removed, zero-byte files, no package content. `.hermes-runtime/python`
+  still 10-01, `cpython-3.11.16…` still 09-23.
+- Files touched under the checkout after 00:00: 105, **all `__pycache__/*.pyc`** (plus `.git` metadata
+  from the worktrees used for the review). No source, no lockfile.
+
+The two worktrees used for this review (`repos/ha-pr`, `repos/ha-pg`) are registered in that
+repository's `.git/worktrees/`, which is metadata, not the working tree. `ha-pg` holds an unpushed
+commit, so neither has been removed.
 
 ## Re-pin prepared, not opened
 
