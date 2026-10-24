@@ -65,3 +65,24 @@ Appended later:
   job, the email prefix fix, hostile timings for all eight patterns, and why two test files cannot
   run on this desktop (a Windows junction that never completes, identical either side of the change)
 - `comment-draft-2026-10-23-round2.md` — the reply as it would be posted; held, not posted
+
+## Posted 2026-10-24 21:32 +08:00 (13:32:47Z)
+
+- Comment: https://github.com/NousResearch/hermes-agent/pull/142381#issuecomment-6384836878
+  (comment id `6384836878`, author `simin-yuan`). Body 1708 chars, read back byte-identical to
+  the approved text.
+- One sentence changed before posting, at Simon's instruction: the provenance-gate paragraph now
+  reads "The fix is out as 0.1.1 (c83fdf6). The catalog re-pin is ready, but I'm at GitHub's
+  five-open-PR limit, so I can add it to this PR or open it separately once a slot frees up,
+  whichever you prefer." Everything else is as approved.
+- Re-pin branch pushed: `simin-yuan/hermes-agent` branch `catalog/provenance-gate` =
+  `d85c508a0f` (one file, sha 8813469d… → c83fdf60…, version 0.1.0 → 0.1.1;
+  `validate_plugin_catalog.py` OK, `scripts/check` 12 checks ok).
+- No re-pin PR opened. GitHub refuses `CreatePullRequest` on NousResearch/hermes-agent with
+  "Users without write access can have up to 5 pull requests open at a time." Five are open:
+  #142974, #142381, #142179, #141479, #141340. Nothing was closed to make room — the choice of
+  folding it into #142381 or opening it later is left to the maintainer, per the comment.
+- PR body for the re-pin is written and parked in scratch (`pr-pg-body.md`); it goes up unchanged
+  once a slot frees up, unless the maintainer asks for it inside #142381.
+- Watcher already running: cron `4e391c90db25` (盯梢-16个上游提交, 10:00 and 22:00) covers
+  #142381 and will report a state change or a maintainer reply.
